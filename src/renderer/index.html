@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+    <title>Learn with Claude</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="titlebar">
+      <div class="brand">Learn&nbsp;with&nbsp;Claude</div>
+      <nav class="tabs">
+        <button class="tab active" data-view="inquiry">탐구</button>
+        <button class="tab" data-view="explain">설명</button>
+        <button class="tab" data-view="recall">인출 <span class="pill" id="duePill" hidden>0</span></button>
+        <button class="tab" data-view="dash">대시보드</button>
+      </nav>
+      <div class="spacer"></div>
+      <button class="ghost" id="settingsBtn">설정</button>
+    </header>
+
+    <main>
+      <!-- ───────────── 탐구 ───────────── -->
+      <section class="view active" id="view-inquiry">
+        <aside class="sidebar">
+          <button class="primary block" id="newSessionBtn">+ 새 학습</button>
+          <div class="sidebar-label">세션</div>
+          <ul class="session-list" id="sessionList"></ul>
+        </aside>
+
+        <div class="pane">
+          <!-- 게이트: 가설 먼저 -->
+          <div class="gate" id="gate">
+            <div class="gate-card">
+              <div class="gate-step">레버 1 — 먼저 나부터</div>
+              <h2>답을 받기 전에, 내 추측을 먼저 적어요</h2>
+              <p class="muted">
+                인출 시도가 있어야 뒤따르는 피드백이 기억에 붙어요. 틀려도 괜찮아요 — 틀린 가설일수록
+                교정 효과가 큽니다.
+              </p>
+              <label>무엇을 배우려 하나요?</label>
+              <input id="gateQuestion" placeholder="예: Node.js의 이벤트 루프에서 microtask와 macrotask는 왜 순서가 다른가?" />
+
+              <label>주제 태그 <span class="muted">(대시보드 집계용)</span></label>
+              <input id="gateTopic" placeholder="예: Node 이벤트 루프" />
+
+              <label>내 현재 가설 <span class="muted">(최소 20자)</span></label>
+              <textarea id="gateHypothesis" rows="6" placeholder="내 추측은... / 아마 ~때문인 것 같은데, ~부분은 모르겠어요"></textarea>
+              <div class="row between">
+                <span class="counter" id="hypCount">0자</span>
+                <button class="primary" id="gateStart" disabled>학습 시작</button>
+              </div>
+              <div class="err" id="gateErr" hidden></div>
+            </div>
+          </div>
+
+          <!-- 채팅 -->
+          <div class="chat-wrap" id="chatWrap" hidden>
+            <div class="chat-head">
+              <div>
+                <div class="chat-topic" id="chatTopic"></div>
+                <div class="chat-q muted" id="chatQuestion"></div>
+              </div>
+              <div class="ladder" id="ladder"></div>
+            </div>
+
+            <div class="messages" id="messages"></div>
+
+            <div class="composer">
+              <textarea id="composerInput" rows="2" placeholder="내 생각을 적어요…  (Enter 전송 · Shift+Enter 줄바꿈)"></textarea>
+              <div class="composer-actions">
+                <button class="ghost small" id="toExplainBtn" title="레버 4">내 말로 정리하기</button>
+                <button class="ghost small" id="makeCardsBtn" title="레버 3">인출 카드 만들기</button>
+                <button class="primary" id="sendBtn">보내기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────── 설명 ───────────── -->
+      <section class="view" id="view-explain">
+        <div class="single">
+          <div class="head-block">
+            <div class="gate-step">레버 4 — 내 말로 검증</div>
+            <h2>덮고, 내 언어로 다시 설명해요</h2>
+            <p class="muted">
+              읽어서 이해되는 것과 스스로 인출·생성할 수 있는 것은 달라요. 여기서는 고쳐 쓴 문장을 돌려주지
+              않아요. 구멍만 질문으로 돌려받습니다.
+            </p>
+          </div>
+          <label>주제</label>
+          <input id="exTopic" placeholder="예: Node 이벤트 루프" />
+          <label>내 설명 <span class="muted">(최소 60자 · 자료 보지 말고 쓰세요)</span></label>
+          <textarea id="exText" rows="12" placeholder="내가 이해한 바로는…"></textarea>
+          <div class="row between">
+            <span class="counter" id="exCount">0자</span>
+            <button class="primary" id="exGradeBtn">진단 받기</button>
+          </div>
+          <div id="exResult"></div>
+          <div class="history" id="exHistory"></div>
+        </div>
+      </section>
+
+      <!-- ───────────── 인출 ───────────── -->
+      <section class="view" id="view-recall">
+        <div class="single">
+          <div class="head-block">
+            <div class="gate-step">레버 3 — 인출·재생성</div>
+            <h2>덮고 다시 꺼내요</h2>
+            <p class="muted">수동적 재독은 화려한 옷 입은 복습일 뿐이에요. 인출만이 기억을 강화합니다.</p>
+          </div>
+          <div id="recallArea"></div>
+          <div class="history">
+            <div class="sidebar-label">전체 카드</div>
+            <div id="allCards"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────── 대시보드 ───────────── -->
+      <section class="view" id="view-dash">
+        <div class="single">
+          <div class="head-block">
+            <h2>학습 대시보드</h2>
+            <p class="muted">"이해했다"는 느낌이 아니라 인출 데이터로 확인해요.</p>
+          </div>
+          <div class="kpis" id="kpis"></div>
+          <div class="sidebar-label">활동 (최근 14일)</div>
+          <div class="spark" id="spark"></div>
+          <div class="sidebar-label">안티패턴 체크</div>
+          <div id="flags"></div>
+          <div class="row between" style="margin-top:18px">
+            <div class="sidebar-label" style="margin:0">코치 한마디</div>
+            <button class="ghost small" id="coachBtn">생성</button>
+          </div>
+          <div id="coach" class="coach"></div>
+          <div class="sidebar-label">개념별 인출 성공률</div>
+          <div id="conceptTable"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 설정 -->
+    <div class="modal" id="settingsModal" hidden>
+      <div class="modal-card">
+        <h3>설정</h3>
+        <label>내 수준 <span class="muted">(튜터 프롬프트에 삽입돼요)</span></label>
+        <input id="setLevel" />
+        <label>모델</label>
+        <select id="setModel">
+          <option value="sonnet">sonnet (기본)</option>
+          <option value="opus">opus</option>
+          <option value="haiku">haiku</option>
+        </select>
+        <div class="row between" style="margin-top:16px">
+          <button class="ghost small" id="healthBtn">연결 확인</button>
+          <button class="primary" id="setSave">저장</button>
+        </div>
+        <div id="healthOut" class="muted small"></div>
+
+        <div class="datazone">
+          <div class="sidebar-label" style="margin-top:0">Obsidian</div>
+          <div id="obsInfo" class="muted small"></div>
+          <div class="row" style="margin-top:10px">
+            <button class="ghost small" id="obsPickBtn">보관함 선택</button>
+          </div>
+          <label>노트 폴더</label>
+          <input id="obsFolder" placeholder="Learn with Claude" />
+          <label class="check"><input type="checkbox" id="obsAuto" /> 자기설명 진단 직후 자동 저장</label>
+          <label class="check"><input type="checkbox" id="obsCards" /> 인출 카드도 함께 (spaced-repetition 포맷)</label>
+        </div>
+
+        <div class="datazone">
+          <div class="sidebar-label" style="margin-top:0">데이터 보관</div>
+          <div id="dataInfo" class="muted small"></div>
+          <div id="dataNotes"></div>
+          <div class="row" style="margin-top:10px">
+            <button class="ghost small" id="backupBtn">지금 백업</button>
+            <button class="ghost small" id="revealBtn">Finder에서 열기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

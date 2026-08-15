@@ -1,0 +1,46 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+const invoke = (ch) => (...args) => ipcRenderer.invoke(ch, ...args);
+
+contextBridge.exposeInMainWorld('api', {
+  settings: { get: invoke('settings:get'), set: invoke('settings:set') },
+  ladder: invoke('meta:ladder'),
+  narrowRequest: invoke('meta:narrowRequest'),
+  health: invoke('health:check'),
+  abort: invoke('agent:abort'),
+
+  session: {
+    list: invoke('session:list'),
+    get: invoke('session:get'),
+    create: invoke('session:create'),
+    hint: invoke('session:hint'),
+    send: invoke('session:send'),
+  },
+
+  data: { info: invoke('data:info'), backup: invoke('data:backup'), reveal: invoke('data:reveal') },
+
+  obsidian: {
+    check: invoke('obsidian:check'),
+    pick: invoke('obsidian:pick'),
+    export: invoke('obsidian:export'),
+    reveal: invoke('obsidian:reveal'),
+  },
+
+  explain: { grade: invoke('explain:grade'), list: invoke('explain:list') },
+
+  cards: {
+    generate: invoke('cards:generate'),
+    due: invoke('cards:due'),
+    all: invoke('cards:all'),
+    answer: invoke('cards:answer'),
+    remove: invoke('cards:delete'),
+  },
+
+  stats: { get: invoke('stats:get'), coach: invoke('stats:coach') },
+
+  onDelta: (cb) => {
+    const fn = (_e, payload) => cb(payload);
+    ipcRenderer.on('stream:delta', fn);
+    return () => ipcRenderer.removeListener('stream:delta', fn);
+  },
+});
