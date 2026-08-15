@@ -206,6 +206,25 @@ feedback은 2문장 이내. 정답을 통째로 재설명하지 말고 **빠진 
 {"grade": 0-5 정수, "feedback": "2문장 이내 (해요체)", "missing": ["빠뜨린 핵심 요소"]}`;
 }
 
+/** 에빙하우스 기반 복습 알림용 — 세션 내용으로 인출 질문 하나 생성. */
+export function recallQuestionPrompt({ topic, hypothesis, transcript }) {
+  return `학습자가 "${topic}"을 공부한 지 시간이 흘러 망각 곡선 상 복습이 필요한 시점이에요.
+아래 학습 기록을 바탕으로 인출 질문 하나를 만드세요.
+
+[처음 가설]
+${hypothesis || '(없음)'}
+
+[학습 기록 요약]
+${transcript || '(없음)'}
+
+규칙:
+- 질문 하나만
+- 정의 암기가 아니라 이해도를 확인하는 질문
+- 답은 1~3문장 이내로 가능한 수준
+
+JSON만 반환: {"question": "질문 내용", "hint": "짧은 힌트"}`;
+}
+
 /** 대시보드 — 안티패턴 코칭 한마디. */
 export function coachPrompt({ stats }) {
   return `아래는 한 학습자의 학습 로그 통계예요. 학습과학 관점에서 **가장 걱정되는 신호 하나**를 골라 짧게 코칭하세요.

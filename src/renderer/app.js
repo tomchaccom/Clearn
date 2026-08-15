@@ -515,6 +515,34 @@ async function renderDash() {
     F.append(d);
   }
 
+  // 망각 현황 (에빙하우스)
+  const fStatus = await window.api.forgetting.status();
+  const FS = $('#forgettingStatus');
+  if (FS) {
+    FS.innerHTML = '';
+    if (!fStatus.length) {
+      FS.append(el('div', 'empty', '학습 세션이 없어요'));
+    } else {
+      for (const s of fStatus.slice(0, 6)) {
+        const pct = s.retention === null ? null : Math.round(s.retention * 100);
+        const row = el('div', 'retention-row');
+        const label = el('div', '', s.topic);
+        row.append(label);
+        if (pct !== null) {
+          const barWrap = el('div', 'retention-bar-wrap');
+          const bar = el('div', 'retention-bar');
+          bar.style.width = `${pct}%`;
+          bar.style.background = pct >= 80 ? 'var(--ok)' : pct >= 60 ? 'var(--warn)' : 'var(--danger)';
+          barWrap.append(bar);
+          const note = el('span', 'muted small', `${pct}%${s.dueForRecall ? ' · 복습 필요' : ''}`);
+          if (s.dueForRecall) note.style.color = 'var(--warn)';
+          row.append(barWrap, note);
+        }
+        FS.append(row);
+      }
+    }
+  }
+
   const T = $('#conceptTable');
   T.innerHTML = '';
   if (!s.concepts.length) {

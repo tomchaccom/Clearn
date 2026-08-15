@@ -264,6 +264,7 @@ export function createSession({ topic, question, hypothesis }) {
     messages: [],
     createdAt: now(),
     closedAt: null,
+    forgettingData: { stability: 1, lastReview: now() }, // 에빙하우스 망각 곡선용
   };
   db.sessions.unshift(s);
   logEvent('session_start', {
@@ -383,6 +384,36 @@ export function conceptStat(concept) {
   return { total: g.length, ok: g.filter((e) => e.grade >= 3).length };
 }
 export const dueCards = () => db.cards.filter((c) => c.due <= now()).sort((a, b) => a.due - b.due);
+
+/* ─────────────────────────── 에빙하우스 망각 곡선 ─────────────────────────── */
+
+/** R = e^(-t/S): t=경과일, S=안정성(일). 데이터 없으면 null 반환. */
+export function calcRetention(sessionId) {
+  const s = getSession(sessionId);
+  if (!s?.forgettingData) return null;
+  const daysSince = (Date.now() - s.forgettingData.lastReview) / DAY;
+  return Math.exp(-daysSince / s.forgettingData.stability);
+}
+
+/** 자기설명 점수 기반으로 안정성(stability) 업데이트 */
+export function updateForgettingData(sessionId, multiplier = 2.5) {
+  const s = getSession(sessionId);
+  if (!s) return null;
+  const fd = s.forgettingData ?? { stability: 1, lastReview: Date.now() };
+  fd.stability = Math.min(fd.stability * multiplier, 365);
+  fd.lastReview = Date.now();
+  return updateSession(sessionId, { forgettingData: fd });
+}
+
+/** retention < 0.8 인 세션 반환 (복습 알림 대상) */
+export function sessionsDueForRecall() {
+  return db.sessions.filter((s) => {
+    const fd = s.forgettingData;
+    if (!fd) return false;
+    const daysSince = (Date.now() - fd.lastReview) / DAY;
+    return Math.exp(-daysSince / fd.stability) < 0.8;
+  });
+}
 
 export function gradeCard(cardId, grade) {
   const c = db.cards.find((x) => x.id === cardId);

@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   stats: { get: invoke('stats:get'), coach: invoke('stats:coach') },
+  forgetting: { status: invoke('forgetting:status') },
   claude: { version: invoke('claude:version') },
   usage: { reset: invoke('usage:reset') },
 

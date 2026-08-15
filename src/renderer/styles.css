@@ -311,3 +311,8 @@ label.check input { width: auto; margin: 0; accent-color: var(--accent); }
   z-index: 10;
 }
 .tip-icon:hover::after { opacity: 1; }
+
+/* ── 망각 곡선 retention 바 ── */
+.retention-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: 13px; }
+.retention-bar-wrap { height: 5px; background: var(--bg-3); border-radius: 3px; overflow: hidden; }
+.retention-bar { height: 100%; border-radius: 3px; transition: width 0.4s; }
