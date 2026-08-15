@@ -28,7 +28,8 @@
     "asarUnpack": ["node_modules/@anthropic-ai/claude-agent-sdk*/**"],
     "mac": {
       "target": ["dmg"],
-      "category": "public.app-category.education"
+      "category": "public.app-category.education",
+      "icon": "build/icon.icns"
     }
   }
 }
