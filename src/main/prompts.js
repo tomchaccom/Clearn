@@ -225,6 +225,20 @@ ${transcript || '(없음)'}
 JSON만 반환: {"question": "질문 내용", "hint": "짧은 힌트"}`;
 }
 
+/** Obsidian DAG — 개념 간 선수 관계 추론. */
+export function conceptDagPrompt({ concepts }) {
+  return `아래 개념 목록을 보고, 학습 순서상 선수 관계(A를 알아야 B를 이해할 수 있음)가 명확한 쌍만 골라 JSON으로 반환하세요.
+관계가 양방향으로 불분명하거나 동등 수준이면 bidirectional: true로 표시하세요.
+관계가 없거나 불확실하면 포함하지 마세요.
+
+개념 목록:
+${concepts.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+## 출력 형식
+다른 말 없이 JSON만 출력하세요:
+{"edges": [{"from": "선수 개념", "to": "후속 개념", "bidirectional": false}]}`;
+}
+
 /** 대시보드 — 안티패턴 코칭 한마디. */
 export function coachPrompt({ stats }) {
   return `아래는 한 학습자의 학습 로그 통계예요. 학습과학 관점에서 **가장 걱정되는 신호 하나**를 골라 짧게 코칭하세요.
