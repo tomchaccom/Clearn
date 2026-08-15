@@ -78,6 +78,33 @@ develop → main PR이 머지되면 GitHub Actions가 자동으로:
 - 변경된 UI (스크린샷)
 - 요구사항 (Claude Code 구독)
 
+### 6단계: 릴리즈 버전 갱신
+
+main 머지 완료 후 develop에서 버전을 올린다.
+
+```bash
+git checkout develop && git pull origin develop
+
+# minor 버전 bump (예: 0.1.0 → 0.2.0)
+node -e "
+const fs = require('fs');
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const [major, minor, patch] = pkg.version.split('.').map(Number);
+pkg.version = \`\${major}.\${minor + 1}.0\`;
+fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+console.log('bumped to', pkg.version);
+"
+
+git add package.json
+git commit -m "chore: v{새 버전}으로 버전 bump"
+git push origin develop
+```
+
+버전 규칙:
+- **patch** (`0.1.x`): 버그 수정만
+- **minor** (`0.x.0`): 새 기능 추가
+- **major** (`x.0.0`): 하위 호환 깨지는 변경
+
 ## 롤백
 
 문제 발생 시 이전 릴리즈 태그로 롤백:
