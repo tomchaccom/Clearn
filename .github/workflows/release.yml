@@ -23,6 +23,8 @@ jobs:
 
       - name: 빌드
         run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 릴리즈 생성 (draft)
         uses: softprops/action-gh-release@v2
