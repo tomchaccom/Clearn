@@ -2,6 +2,12 @@
 
 Claude Code가 이 레포에서 작업할 때 따르는 규칙.
 
+## 실행 중 문제 발생 시
+
+`docs/TROUBLESHOOTING.md`를 먼저 확인하세요.
+- 해결책이 있으면 그대로 조치
+- 없으면 조치 후 TROUBLESHOOTING.md 하단에 새 항목 추가 (증상·원인·해결책 형식)
+
 ## 프로젝트 개요
 → `.claude/project-context.md` 참조 (아키텍처·도메인 모델·데이터 플로우)
 
