@@ -9,8 +9,10 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
+    "dev": "electron .",
     "dist": "electron-builder --mac",
-    "test": "node --import ./test/setup.mjs test/unit.mjs && node --import ./test/setup.mjs test/integration.mjs"
+    "test": "node --import ./test/setup.mjs test/unit.mjs && node --import ./test/setup.mjs test/integration.mjs",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.220"
