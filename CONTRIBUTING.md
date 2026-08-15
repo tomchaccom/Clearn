@@ -39,10 +39,10 @@ main        ──── 프로덕션 (릴리즈 태그)
 한국어 Conventional Commits 형식을 따른다.
 
 ```
-feat: 소크라테스 모드 힌트 횟수 제한 추가
-fix: 세션 복원 실패 시 크래시 수정
-chore: electron 33.4.11로 업데이트
-docs: README 설치 방법 보완
+feat(tutor): 소크라테스 모드 힌트 횟수 제한 추가
+fix(session): 세션 복원 실패 시 크래시 수정
+chore(deps): electron 33.4.11로 업데이트
+docs(readme): README 설치 방법 보완
 ```
 
 - 제목은 50자 이내

@@ -40,7 +40,8 @@ git checkout -b {feature 또는 fix}/issue-{번호}-{짧은-설명}
 ### 3단계: 작업 진행
 
 사용자가 코드 작업을 완료했다고 하면 다음 단계로 넘어간다.
-작업 중에는 커밋 메시지 규칙(한국어 Conventional Commits)을 안내한다.
+작업 중에는 커밋 메시지 규칙(한국어 Conventional Commits + scope)을 안내한다.
+형식: `type(scope): 설명` — scope는 변경된 영역 (예: tutor, session, ui, agent, store)
 
 ### 4단계: PR 생성
 
