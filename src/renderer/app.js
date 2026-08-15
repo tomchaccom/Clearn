@@ -1,69 +1,3 @@
-/* ── window.api polyfill (Express 서버 fetch 기반, preload.cjs 대체) ── */
-(function () {
-  const apiFetch = async (method, url, body) => {
-    const opts = { method, headers: {} };
-    if (body !== undefined) {
-      opts.headers['Content-Type'] = 'application/json';
-      opts.body = JSON.stringify(body);
-    }
-    const r = await fetch(url, opts);
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || r.statusText);
-    return data;
-  };
-
-  window.api = {
-    settings: {
-      get: () => apiFetch('GET', '/api/settings'),
-      set: (patch) => apiFetch('PATCH', '/api/settings', patch),
-    },
-    onboarding: { complete: () => apiFetch('POST', '/api/onboarding/complete') },
-    ladder: () => apiFetch('GET', '/api/meta/ladder'),
-    narrowRequest: () => apiFetch('GET', '/api/meta/narrow-request'),
-    health: () => apiFetch('GET', '/api/health'),
-    abort: (requestId) => apiFetch('POST', '/api/agent/abort', { requestId }),
-    session: {
-      list: () => apiFetch('GET', '/api/sessions'),
-      get: (id) => apiFetch('GET', `/api/sessions/${id}`),
-      create: (body) => apiFetch('POST', '/api/sessions', body),
-      hint: (id, level) => apiFetch('PATCH', `/api/sessions/${id}/hint`, { level }),
-      // send는 SSE 스트리밍으로 sendTurn 내부에서 직접 처리
-    },
-    data: {
-      info: () => apiFetch('GET', '/api/data/info'),
-      backup: () => apiFetch('POST', '/api/data/backup').then((r) => r.name),
-      reveal: () => apiFetch('POST', '/api/data/reveal'),
-    },
-    obsidian: {
-      check: () => apiFetch('GET', '/api/obsidian/check'),
-      pick: (vaultPath) => apiFetch('POST', '/api/obsidian/pick', { vaultPath }),
-      export: (explainId) => apiFetch('POST', '/api/obsidian/export', { explainId }),
-      reveal: (file) => apiFetch('POST', '/api/obsidian/reveal', { file }),
-      buildDag: () => apiFetch('POST', '/api/obsidian/build-dag'),
-      buildConceptNote: (args) => apiFetch('POST', '/api/obsidian/concept-note', args),
-    },
-    explain: {
-      grade: (body) => apiFetch('POST', '/api/explains/grade', body),
-      list: () => apiFetch('GET', '/api/explains'),
-    },
-    cards: {
-      generate: (body) => apiFetch('POST', '/api/cards/generate', body),
-      due: () => apiFetch('GET', '/api/cards/due'),
-      all: () => apiFetch('GET', '/api/cards'),
-      answer: (body) => apiFetch('POST', `/api/cards/${body.cardId}/answer`, { answer: body.answer }),
-      remove: (id) => apiFetch('DELETE', `/api/cards/${id}`),
-    },
-    stats: {
-      get: () => apiFetch('GET', '/api/stats'),
-      coach: () => apiFetch('GET', '/api/stats/coach').then((r) => r.text),
-    },
-    forgetting: { status: () => apiFetch('GET', '/api/forgetting/status') },
-    claude: { version: () => apiFetch('GET', '/api/claude/version').then((r) => r.version) },
-    usage: { reset: () => apiFetch('POST', '/api/usage/reset') },
-    onDelta: () => () => {}, // SSE로 대체됨 — no-op
-  };
-})();
-
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const el = (tag, cls, text) => {
@@ -259,63 +193,28 @@ async function sendTurn(text) {
 
   const requestId = uuid();
   let acc = '';
+  const off = window.api.onDelta(({ requestId: rid, delta }) => {
+    if (rid !== requestId) return;
+    acc += delta;
+    body.classList.remove('typing');
+    body.textContent = acc;
+    box.scrollTop = box.scrollHeight;
+  });
 
   try {
-    const response = await fetch(`/api/sessions/${currentSession.id}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, requestId }),
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || response.statusText);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let res = null;
-    let buf = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        try {
-          const data = JSON.parse(line.slice(6));
-          if (data.delta !== undefined) {
-            acc += data.delta;
-            body.classList.remove('typing');
-            body.textContent = acc;
-            box.scrollTop = box.scrollHeight;
-          } else if (data.text !== undefined) {
-            res = data;
-          } else if (data.error) {
-            throw new Error(data.error);
-          }
-        } catch (parseErr) {
-          if (parseErr instanceof SyntaxError) continue;
-          throw parseErr;
-        }
-      }
-    }
-
-    if (res) {
-      currentSession = res.session;
-      body.classList.remove('typing');
-      body.textContent = res.text || acc;
-      a.append(el('div', 'lvl', `힌트 ${LADDER[currentSession.hintLevel]?.badge ?? 'L?'}`));
-      if (res.tooMany) a.append(narrowNotice(res.questions));
-      await loadSessions();
-    }
+    const res = await window.api.session.send({ sessionId: currentSession.id, text, requestId });
+    currentSession = res.session;
+    body.classList.remove('typing');
+    body.textContent = res.text || acc;
+    a.append(el('div', 'lvl', `힌트 ${LADDER[currentSession.hintLevel]?.badge ?? 'L?'}`));
+    if (res.tooMany) a.append(narrowNotice(res.questions));
+    await loadSessions();
   } catch (e) {
     body.classList.remove('typing');
     body.textContent = `⚠︎ ${errMsg(e)}`;
     toast(errMsg(e), true);
   } finally {
+    off();
     streaming = false;
     $('#sendBtn').disabled = false;
     box.scrollTop = box.scrollHeight;
@@ -730,7 +629,6 @@ $('#settingsBtn').addEventListener('click', async () => {
   $('#setModel').value = s.model;
   $('#healthOut').textContent = '';
   $('#obsFolder').value = s.obsidianFolder ?? 'Learn with Claude';
-  if ($('#obsVaultInput')) $('#obsVaultInput').value = s.obsidianVault ?? '';
   $('#obsAuto').checked = !!s.obsidianAuto;
   $('#obsCards').checked = !!s.obsidianCards;
   $('#settingsModal').hidden = false;
@@ -753,10 +651,8 @@ async function renderObsInfo() {
 }
 
 $('#obsPickBtn').addEventListener('click', async () => {
-  const vaultPath = $('#obsVaultInput')?.value?.trim();
-  if (!vaultPath) { toast('보관함 경로를 입력해주세요.', true); return; }
   try {
-    const r = await window.api.obsidian.pick(vaultPath);
+    const r = await window.api.obsidian.pick();
     if (r) toast('보관함을 설정했어요');
     renderObsInfo();
   } catch (e) {
@@ -893,10 +789,8 @@ function initOnboarding(settings) {
   $('#ob3AfterInstall').onclick = () => showObSubstep('ob3-pick');
   $('#obDownloadLink').onclick = () => window.open('https://obsidian.md');
   $('#ob3Pick').onclick = async () => {
-    const vaultPath = $('#ob3VaultInput')?.value?.trim();
-    if (!vaultPath) { $('#ob3VaultStatus').textContent = 'Obsidian 보관함 경로를 입력하세요.'; return; }
     try {
-      const r = await window.api.obsidian.pick(vaultPath);
+      const r = await window.api.obsidian.pick();
       if (r) {
         $('#ob3VaultStatus').textContent = `보관함 연결됨: ${r.path}`;
         $('#ob3VaultStatus').style.color = 'var(--ok)';
@@ -965,9 +859,10 @@ const isMissingHandler = (e) => /No handler registered/i.test(String(e?.message 
 
   if (stale.length) {
     toast(
-      `일부 기능 로드 실패 (${stale.join(', ')}). 서버가 실행 중인지 확인하고 페이지를 새로고침해 주세요.`,
+      `메인 프로세스가 예전 코드로 실행 중이에요 (${stale.join(', ')}). ` +
+        'Cmd+R 새로고침으로는 반영되지 않아요 — Cmd+Q 로 완전히 종료한 뒤 npm start 를 다시 실행해 주세요.',
       true,
-      0,
+      0, // 자동으로 사라지지 않게
     );
   }
 })();
