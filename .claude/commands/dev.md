@@ -62,21 +62,31 @@ PR 본문은 `.github/pull_request_template.md` 형식을 따른다:
 - UI 변경 스크린샷 (해당 시)
 - 체크리스트
 
-### 5단계: main 머지 및 릴리즈
+### 5단계: 릴리즈 PR 생성 → main 머지 → 빌드
 
-develop → main PR이 머지되면 GitHub Actions가 자동으로:
-1. 빌드 실행 (`npm run dist`)
-2. draft 릴리즈 생성 (`.dmg` 첨부)
+자동화 흐름 (워크플로 파일 기준):
 
-사용자에게 안내:
-- GitHub Releases에서 draft 릴리즈 확인
-- 릴리즈 노트에 변경사항 상세 보완 후 publish
+```
+develop push
+  └─► auto-release-pr.yml
+        ├─ 기존 develop→main PR 없으면 자동 생성
+        └─ PR 본문: 머지된 PR 목록 + 커밋 요약 + 체크리스트
 
-릴리즈 노트 포함 권장 내용:
-- 추가된 기능
+develop→main PR merge
+  └─► release.yml (macos-latest)
+        ├─ npm ci → npm run dist (electron-builder --mac)
+        └─ softprops/action-gh-release: draft .dmg 업로드
+```
+
+릴리즈 PR 머지 후 해야 할 것:
+1. GitHub Releases에서 draft 확인 → 릴리즈 노트 보완 → publish
+2. 6단계로 이동해 develop 버전 bump
+
+릴리즈 노트 권장 내용:
+- 추가된 기능 (레버별)
 - 수정된 버그
 - 변경된 UI (스크린샷)
-- 요구사항 (Claude Code 구독)
+- 요구사항 (macOS Apple Silicon + Claude Code 구독)
 
 ### 6단계: 릴리즈 버전 갱신
 

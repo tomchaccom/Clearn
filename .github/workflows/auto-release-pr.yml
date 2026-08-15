@@ -31,11 +31,57 @@ jobs:
       - name: 릴리즈 PR 생성 (없을 때만)
         if: steps.check_pr.outputs.pr_number == ''
         run: |
-          CHANGELOG=$(git log origin/main..HEAD --oneline --no-merges | head -20)
+          VERSION="${{ steps.version.outputs.version }}"
+
+          MERGED_PRS=$(gh pr list \
+            --state merged --base develop --limit 30 \
+            --json number,title \
+            --jq '.[] | "- #\(.number) \(.title)"' 2>/dev/null || echo "(PR 정보 없음)")
+
+          COMMITS=$(git log origin/main..HEAD --oneline --no-merges | head -20)
+          FILES_CHANGED=$(git diff --stat origin/main..HEAD | tail -1 | xargs)
+
           gh pr create \
             --base main \
             --head develop \
-            --title "release: v${{ steps.version.outputs.version }}" \
-            --body "$(printf '## 릴리즈 v%s\n\ndevelop → main 자동 릴리즈 PR\n\n### 변경사항\n\n```\n%s\n```\n\n---\n자동 생성됨' '${{ steps.version.outputs.version }}' "$CHANGELOG")"
+            --title "release: v${VERSION}" \
+            --body "## 릴리즈 v${VERSION}
+
+          develop → main 자동 릴리즈 PR
+
+          ---
+
+          ### 📦 포함된 PR
+
+          ${MERGED_PRS}
+
+          ---
+
+          ### 📝 커밋 요약
+
+          \`\`\`
+          ${COMMITS}
+          \`\`\`
+
+          변경 규모: ${FILES_CHANGED}
+
+          ---
+
+          ### ✅ 릴리즈 체크리스트
+
+          - [ ] E2E 테스트 통과 확인
+          - [ ] 주요 기능 수동 스모크 테스트
+          - [ ] 릴리즈 노트 작성 (GitHub Releases draft 보완)
+          - [ ] 머지 후 develop 버전 bump
+
+          ---
+
+          ### 🔧 머지 후 자동 실행
+
+          1. \`release.yml\` → macOS 빌드 → \`.dmg\` draft 업로드
+          2. GitHub Releases에서 draft 확인 → 릴리즈 노트 보완 → publish
+
+          ---
+          *자동 생성됨 by Auto Release PR workflow*"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
