@@ -1,17 +1,38 @@
-# Learn with Claude
+# Clearn
 
-「학습 기회를 지키는 Claude 사용법」의 4가지 레버를 **강제 워크플로**로 구현한 맥 데스크톱 앱.
+소크라테스식 AI 튜터 · 인출 연습(SM-2) · 자기설명 검증 · 에빙하우스 망각 곡선 기반 복습.
+Claude Code 구독으로 동작하는 macOS 학습 앱 (API 키 불필요).
 
 핵심 설계 원칙: 답을 늦게 받고, 내 머리를 먼저 쓰게 만든다. 이 앱은 편의를 위해 만든 게 아니라 **불편함을 유지하기 위해** 만들었다.
 
 ---
 
-## 실행
+## 스크린샷
+
+> UI 스크린샷은 `docs/screenshots/` 폴더에 추가하세요.
+
+| 탐구 (소크라테스 대화) | 인출 카드 (플래시카드) | 대시보드 |
+|---|---|---|
+| _(스크린샷 추가 예정)_ | _(스크린샷 추가 예정)_ | _(스크린샷 추가 예정)_ |
+
+---
+
+## 설치 및 실행
+
+### 요구사항
+- macOS 12+
+- [Claude Code](https://claude.ai/code) 설치 및 로그인 (`claude` 명령 사용 가능 상태)
 
 ```bash
-cd learn-with-claude
+git clone https://github.com/tomchaccom/Clearn.git
+cd Clearn
 npm install
 npm start
+```
+
+앱 번들(.dmg) 빌드:
+```bash
+npm run dist    # dist/ 에 생성
 ```
 
 ### 코드를 고쳤을 때
@@ -120,15 +141,36 @@ Obsidian 그래프 뷰에서 약한 개념이 어디에 몰려 있는지 바로 
 ## 구조
 
 ```
-src/
-  main/
-    main.js       Electron 진입점 + 모든 IPC 핸들러 + 복습 알림
-    agent.js      Agent SDK 래퍼 (툴 0개 · 스트리밍 · JSON 파서 · 세션 resume)
-    prompts.js    ★ 4가지 레버 프롬프트 — 튜닝은 대부분 여기서만
-    store.js      JSON 저장소 + SM-2 스케줄러 + 안티패턴 규칙
-    preload.cjs   contextBridge
-  renderer/
-    index.html · styles.css · app.js
+Clearn/
+├── src/
+│   ├── main/
+│   │   ├── main.js        IPC 핸들러 전체, 알림 스케줄러
+│   │   ├── agent.js       Claude Agent SDK 래퍼 (스트리밍·JSON·세션 resume)
+│   │   ├── prompts.js     ★ 4가지 레버 프롬프트 — 튜닝은 여기서만
+│   │   ├── store.js       JSON 영속성 + SM-2 SRS + 에빙하우스 망각 곡선
+│   │   ├── obsidian.js    Obsidian 보관함 내보내기 + DAG 그래프
+│   │   └── preload.cjs    contextBridge IPC bridge
+│   └── renderer/
+│       ├── index.html     UI 진입점
+│       ├── app.js         렌더러 전체 로직 (Vanilla JS)
+│       └── styles.css     다크 테마, CSS 변수 기반
+├── .claude/
+│   ├── project-context.md  프로젝트 온톨로지
+│   ├── commands/           커스텀 스킬 (/dev, /update-context)
+│   └── settings.json       MCP 서버 설정
+├── .github/
+│   └── workflows/
+│       ├── ci.yml              PR 시 구문 검사
+│       ├── release.yml         main 머지 시 자동 .dmg 빌드
+│       └── auto-release-pr.yml develop 머지 시 릴리즈 PR 자동 생성
+├── .githooks/
+│   └── pre-push            push 전 JS 구문 확인
+├── build/
+│   └── icon.icns           macOS 앱 아이콘
+├── CLAUDE.md               Claude Code 작업 가이드
+├── AGENT.md                Codex CLI 작업 가이드
+├── CONTRIBUTING.md         브랜치·커밋·PR 규칙
+└── package.json
 ```
 
 ### 데이터 보관
