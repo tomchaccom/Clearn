@@ -239,6 +239,44 @@ ${concepts.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 {"edges": [{"from": "선수 개념", "to": "후속 개념", "bidirectional": false}]}`;
 }
 
+/** Obsidian 개발자 친화 개념 노트 생성. */
+export function conceptNotePrompt({ concept, sessions, language = 'JavaScript' }) {
+  const sessionSummary = sessions.slice(0, 3).map((s, i) =>
+    `세션 ${i + 1} (${new Date(s.createdAt).toLocaleDateString('ko-KR')})\n가설: ${s.hypothesis}\n자기설명 점수: ${s.explainScore ?? '미측정'}`
+  ).join('\n\n');
+
+  return `개발자 학습자를 위한 "${concept}" 개념 노트를 Obsidian 마크다운으로 작성하세요.
+언어/기술 컨텍스트: ${language}
+
+[학습 이력]
+${sessionSummary || '(없음)'}
+
+## 작성 규칙
+- 개요: 2~3문장, 핵심만
+- 코드 예시: ${language} 실제 동작 코드, 주석 포함
+- 핵심 질문: 인출 연습용 질문 3개
+- 자주 하는 실수: 1~2개
+- 각 섹션은 ## 헤더로 구분
+
+## 출력 형식 (마크다운만, 앞뒤 설명 없이)
+
+## 개요
+...
+
+## 코드 예시
+\`\`\`${language.toLowerCase()}
+...
+\`\`\`
+
+## 핵심 질문
+1. ...
+2. ...
+3. ...
+
+## 자주 하는 실수
+- ...`;
+}
+
 /** 대시보드 — 안티패턴 코칭 한마디. */
 export function coachPrompt({ stats }) {
   return `아래는 한 학습자의 학습 로그 통계예요. 학습과학 관점에서 **가장 걱정되는 신호 하나**를 골라 짧게 코칭하세요.

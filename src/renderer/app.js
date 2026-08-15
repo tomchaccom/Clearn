@@ -349,6 +349,28 @@ function renderObsidianRow(rec) {
   });
   row.append(btn);
   out.append(row);
+
+  // 개발자 친화 개념 노트 생성 버튼
+  const noteBtn = el('button', 'ghost small', 'Obsidian 개념 노트 생성');
+  noteBtn.style.marginTop = '8px';
+  noteBtn.addEventListener('click', async () => {
+    noteBtn.disabled = true;
+    noteBtn.textContent = '생성 중…';
+    try {
+      const r = await window.api.obsidian.buildConceptNote({
+        concept: document.getElementById('exTopic').value.trim() || '개념',
+        sessionIds: [],
+        language: 'JavaScript',
+      });
+      toast(`Obsidian 개념 노트 생성됨: ${r.filePath.split('/').pop()}`);
+      noteBtn.textContent = '노트 생성 완료 ✓';
+    } catch (e) {
+      toast(errMsg(e), true);
+      noteBtn.disabled = false;
+      noteBtn.textContent = 'Obsidian 개념 노트 생성';
+    }
+  });
+  out.append(noteBtn);
 }
 
 async function renderExplainHistory() {

@@ -17,6 +17,7 @@ import {
   recallQuestionPrompt,
   coachPrompt,
   conceptDagPrompt,
+  conceptNotePrompt,
   countQuestions,
   NARROW_REQUEST,
   HINT_LADDER,
@@ -280,6 +281,19 @@ handle('obsidian:buildDag', async () => {
   }
   store.logEvent('obsidian_dag', { concepts: concepts.length, edges: edges.length });
   return { edges: edges.length };
+});
+
+handle('obsidian:buildConceptNote', async (_, { concept, sessionIds, language }) => {
+  const s = store.getSettings();
+  if (!s.obsidianVault) throw new Error('Obsidian 보관함이 설정되지 않았어요. 설정 > Obsidian에서 보관함을 선택하세요.');
+  const allSessions = store.db.sessions || [];
+  const sessions = (sessionIds || [])
+    .map((id) => allSessions.find((s) => s.id === id))
+    .filter(Boolean)
+    .map((sess) => ({ createdAt: sess.createdAt, hypothesis: sess.hypothesis, explainScore: null }));
+  const noteContent = await agent.run({ prompt: conceptNotePrompt({ concept, sessions, language: language || 'JavaScript' }) });
+  const filePath = obsidian.writeConceptNote(s.obsidianVault, s.obsidianFolder, concept, noteContent);
+  return { filePath };
 });
 
 /** 개념 파일에 선수 개념 링크 추가 (managed 영역 밖에 append — 재내보내기해도 보존됨) */
