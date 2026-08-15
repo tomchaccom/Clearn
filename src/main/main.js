@@ -13,6 +13,7 @@ import {
   explainGraderPrompt,
   cardGenPrompt,
   recallGraderPrompt,
+  recallQuestionPrompt,
   coachPrompt,
   countQuestions,
   NARROW_REQUEST,
@@ -75,15 +76,30 @@ process.on('exit', () => {
   }
 });
 
-/** 복습 연체 알림 — 앱 실행 중 1시간마다 체크 */
+/** 복습 연체 알림 + 에빙하우스 세션 복습 알림 — 앱 실행 중 1시간마다 체크 */
 function scheduleDueNotification() {
-  const check = () => {
+  const check = async () => {
+    // SM-2 카드 연체 알림
     const n = store.dueCards().length;
     if (n >= 3 && Notification.isSupported()) {
       new Notification({
         title: '인출 복습 대기 중',
         body: `${n}장이 복습 예정이에요. 덮고 꺼내볼 시간이에요.`,
       }).show();
+    }
+    // 에빙하우스 망각 곡선 기반 세션 복습 알림
+    const dueSessions = store.sessionsDueForRecall();
+    if (dueSessions.length > 0 && Notification.isSupported()) {
+      const s = dueSessions[0];
+      try {
+        const json = await agent.runJson({
+          prompt: recallQuestionPrompt({ topic: s.topic, hypothesis: s.hypothesis, transcript: store.transcript(s.id, 6) }),
+        });
+        new Notification({
+          title: `"${s.topic}" 복습 타임`,
+          body: json.question || '이 주제를 다시 떠올려보세요.',
+        }).show();
+      } catch { /* 알림은 best-effort */ }
     }
   };
   setTimeout(check, 60_000);
@@ -259,6 +275,12 @@ handle('explain:grade', async ({ sessionId, topic, explanation }) => {
     concepts: Array.isArray(json.concepts) ? json.concepts : [],
   });
 
+  // 자기설명 성공 시 망각 곡선 안정성 업데이트
+  if (sessionId && Number(json.score) >= 70) {
+    const mult = Number(json.score) >= 90 ? 3.5 : Number(json.score) >= 80 ? 2.5 : 1.8;
+    store.updateForgettingData(sessionId, mult);
+  }
+
   // 자동 내보내기가 켜져 있어도 진단 자체는 성공시킨다 — 내보내기 실패는 별도로 알린다.
   const s = store.getSettings();
   let exported = null;
@@ -307,6 +329,15 @@ handle('cards:answer', async ({ cardId, answer }) => {
 });
 
 /* ── 대시보드 ── */
+
+handle('forgetting:status', () =>
+  store.listSessions().map((s) => ({
+    id: s.id,
+    topic: s.topic,
+    retention: store.calcRetention(s.id),
+    dueForRecall: !!s.forgettingData && Math.exp(-(Date.now() - s.forgettingData.lastReview) / (86400000 * s.forgettingData.stability)) < 0.8,
+  })),
+);
 
 handle('stats:get', () => ({ stats: store.stats(), antipatterns: store.antipatterns() }));
 
