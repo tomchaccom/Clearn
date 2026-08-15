@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # main 브랜치는 develop에서만 PR 허용 (git flow 강제)
+  guard:
+    runs-on: ubuntu-latest
+    if: github.base_ref == 'main'
+    steps:
+      - name: develop → main만 허용
+        if: github.head_ref != 'develop'
+        run: |
+          echo "main에는 develop 브랜치에서만 PR을 올릴 수 있습니다. (현재: ${{ github.head_ref }})"
+          exit 1
+
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test

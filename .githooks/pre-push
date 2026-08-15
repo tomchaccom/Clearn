@@ -1,0 +1,13 @@
+#!/bin/sh
+# pre-push hook: JS 구문 확인 후 push 허용
+# npm prepare 실행 시 자동 등록됨 (git config core.hooksPath .githooks)
+
+echo "구문 확인 중..."
+ERRORS=$(find src -name "*.js" | xargs node --check 2>&1)
+if [ $? -ne 0 ]; then
+  echo "구문 오류 발견:"
+  echo "$ERRORS"
+  echo "push를 중단합니다."
+  exit 1
+fi
+echo "확인 완료"

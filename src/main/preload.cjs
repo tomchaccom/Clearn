@@ -4,6 +4,7 @@ const invoke = (ch) => (...args) => ipcRenderer.invoke(ch, ...args);
 
 contextBridge.exposeInMainWorld('api', {
   settings: { get: invoke('settings:get'), set: invoke('settings:set') },
+  onboarding: { complete: invoke('onboarding:complete') },
   ladder: invoke('meta:ladder'),
   narrowRequest: invoke('meta:narrowRequest'),
   health: invoke('health:check'),
@@ -24,6 +25,8 @@ contextBridge.exposeInMainWorld('api', {
     pick: invoke('obsidian:pick'),
     export: invoke('obsidian:export'),
     reveal: invoke('obsidian:reveal'),
+    buildDag: invoke('obsidian:buildDag'),
+    buildConceptNote: (args) => ipc('obsidian:buildConceptNote', args),
   },
 
   explain: { grade: invoke('explain:grade'), list: invoke('explain:list') },
@@ -37,6 +40,9 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   stats: { get: invoke('stats:get'), coach: invoke('stats:coach') },
+  forgetting: { status: invoke('forgetting:status') },
+  claude: { version: invoke('claude:version') },
+  usage: { reset: invoke('usage:reset') },
 
   onDelta: (cb) => {
     const fn = (_e, payload) => cb(payload);

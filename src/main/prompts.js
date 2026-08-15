@@ -206,6 +206,77 @@ feedback은 2문장 이내. 정답을 통째로 재설명하지 말고 **빠진 
 {"grade": 0-5 정수, "feedback": "2문장 이내 (해요체)", "missing": ["빠뜨린 핵심 요소"]}`;
 }
 
+/** 에빙하우스 기반 복습 알림용 — 세션 내용으로 인출 질문 하나 생성. */
+export function recallQuestionPrompt({ topic, hypothesis, transcript }) {
+  return `학습자가 "${topic}"을 공부한 지 시간이 흘러 망각 곡선 상 복습이 필요한 시점이에요.
+아래 학습 기록을 바탕으로 인출 질문 하나를 만드세요.
+
+[처음 가설]
+${hypothesis || '(없음)'}
+
+[학습 기록 요약]
+${transcript || '(없음)'}
+
+규칙:
+- 질문 하나만
+- 정의 암기가 아니라 이해도를 확인하는 질문
+- 답은 1~3문장 이내로 가능한 수준
+
+JSON만 반환: {"question": "질문 내용", "hint": "짧은 힌트"}`;
+}
+
+/** Obsidian DAG — 개념 간 선수 관계 추론. */
+export function conceptDagPrompt({ concepts }) {
+  return `아래 개념 목록을 보고, 학습 순서상 선수 관계(A를 알아야 B를 이해할 수 있음)가 명확한 쌍만 골라 JSON으로 반환하세요.
+관계가 양방향으로 불분명하거나 동등 수준이면 bidirectional: true로 표시하세요.
+관계가 없거나 불확실하면 포함하지 마세요.
+
+개념 목록:
+${concepts.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+## 출력 형식
+다른 말 없이 JSON만 출력하세요:
+{"edges": [{"from": "선수 개념", "to": "후속 개념", "bidirectional": false}]}`;
+}
+
+/** Obsidian 개발자 친화 개념 노트 생성. */
+export function conceptNotePrompt({ concept, sessions, language = 'JavaScript' }) {
+  const sessionSummary = sessions.slice(0, 3).map((s, i) =>
+    `세션 ${i + 1} (${new Date(s.createdAt).toLocaleDateString('ko-KR')})\n가설: ${s.hypothesis}\n자기설명 점수: ${s.explainScore ?? '미측정'}`
+  ).join('\n\n');
+
+  return `개발자 학습자를 위한 "${concept}" 개념 노트를 Obsidian 마크다운으로 작성하세요.
+언어/기술 컨텍스트: ${language}
+
+[학습 이력]
+${sessionSummary || '(없음)'}
+
+## 작성 규칙
+- 개요: 2~3문장, 핵심만
+- 코드 예시: ${language} 실제 동작 코드, 주석 포함
+- 핵심 질문: 인출 연습용 질문 3개
+- 자주 하는 실수: 1~2개
+- 각 섹션은 ## 헤더로 구분
+
+## 출력 형식 (마크다운만, 앞뒤 설명 없이)
+
+## 개요
+...
+
+## 코드 예시
+\`\`\`${language.toLowerCase()}
+...
+\`\`\`
+
+## 핵심 질문
+1. ...
+2. ...
+3. ...
+
+## 자주 하는 실수
+- ...`;
+}
+
 /** 대시보드 — 안티패턴 코칭 한마디. */
 export function coachPrompt({ stats }) {
   return `아래는 한 학습자의 학습 로그 통계예요. 학습과학 관점에서 **가장 걱정되는 신호 하나**를 골라 짧게 코칭하세요.

@@ -349,6 +349,28 @@ function renderObsidianRow(rec) {
   });
   row.append(btn);
   out.append(row);
+
+  // 개발자 친화 개념 노트 생성 버튼
+  const noteBtn = el('button', 'ghost small', 'Obsidian 개념 노트 생성');
+  noteBtn.style.marginTop = '8px';
+  noteBtn.addEventListener('click', async () => {
+    noteBtn.disabled = true;
+    noteBtn.textContent = '생성 중…';
+    try {
+      const r = await window.api.obsidian.buildConceptNote({
+        concept: document.getElementById('exTopic').value.trim() || '개념',
+        sessionIds: [],
+        language: 'JavaScript',
+      });
+      toast(`Obsidian 개념 노트 생성됨: ${r.filePath.split('/').pop()}`);
+      noteBtn.textContent = '노트 생성 완료 ✓';
+    } catch (e) {
+      toast(errMsg(e), true);
+      noteBtn.disabled = false;
+      noteBtn.textContent = 'Obsidian 개념 노트 생성';
+    }
+  });
+  out.append(noteBtn);
 }
 
 async function renderExplainHistory() {
@@ -383,32 +405,50 @@ function renderCurrentCard() {
   area.innerHTML = '';
   const card = recallQueue[recallIdx];
   if (!card) {
-    area.append(el('div', 'empty', recallQueue.length ? '오늘 복습 완료 🎉' : '지금 복습할 카드가 없어요. 탐구 세션에서 카드를 만들어보세요.'));
+    area.append(el('div', 'empty', recallQueue.length ? '오늘 복습 완료' : '지금 복습할 카드가 없어요. 탐구 세션에서 카드를 만들어보세요.'));
     return;
   }
 
-  const wrap = el('div', 'card');
-  const meta = el('div', 'meta');
-  const tag = el('span', `kindtag ${card.kind}`, card.kind);
-  meta.append(tag);
-  meta.append(document.createTextNode(`${card.concept} · ${recallIdx + 1}/${recallQueue.length} · ${card.reps}회 · 실패 ${card.lapses}`));
-  wrap.append(meta);
-  wrap.append(el('div', 'front', card.front));
+  // 진행 바
+  const count = el('div', 'fc-count', `${recallIdx + 1} / ${recallQueue.length}`);
+  const prog = el('div', 'fc-progress');
+  const fill = el('div', 'fc-progress-fill');
+  fill.style.width = `${Math.round((recallIdx / recallQueue.length) * 100)}%`;
+  prog.append(fill);
+  area.append(count, prog);
 
+  // 플래시카드 (.card class for backward-compat test selector)
+  const fcWrap = el('div', 'flashcard-wrap card');
+  const fc = el('div', 'flashcard');
+  const front = el('div', 'flashcard-face flashcard-front');
+  front.append(el('div', 'fc-label', `${card.concept} · ${card.kind}`));
+  front.append(el('div', '', card.front));
+  const back = el('div', 'flashcard-face flashcard-back');
+  back.append(el('div', 'fc-label', '정답'));
+  // card.back populated lazily on flip to keep textContent clean before reveal
+  fc.append(front, back);
+  fcWrap.append(fc);
+
+  // 정답 보기 버튼
+  const showBtn = el('button', 'primary', '정답 보기');
+  showBtn.style.marginTop = '16px';
+  fcWrap.append(showBtn);
+
+  // 답 작성 + 채점 영역 (처음엔 숨김, DOM에 미리 존재)
+  const answerArea = el('div');
+  answerArea.hidden = true;
   const ta = el('textarea');
-  ta.rows = 5;
-  ta.placeholder = '자료 보지 말고 기억에서 꺼내 쓰세요. 모르면 비워두고 제출해도 돼요.';
+  ta.rows = 3;
+  ta.placeholder = '기억에서 꺼낸 내용을 적어도 되고, 비워둔 채 채점받아도 돼요.';
   ta.style.marginTop = '14px';
-  wrap.append(ta);
-
   const row = el('div', 'row between');
   row.style.marginTop = '10px';
   const skip = el('button', 'ghost small', '모르겠어요 (0점)');
   const submit = el('button', 'primary', '채점');
   row.append(skip, submit);
-  wrap.append(row);
-  area.append(wrap);
-  ta.focus();
+  answerArea.append(ta, row);
+  fcWrap.append(answerArea);
+  area.append(fcWrap);
 
   const doGrade = async (answer) => {
     submit.disabled = skip.disabled = ta.disabled = true;
@@ -421,19 +461,14 @@ function renderCurrentCard() {
       head.append(badge, el('span', '', r.feedback));
       out.append(head);
       if (r.missing?.length) out.append(el('div', 'muted small', `빠진 것: ${r.missing.join(', ')}`));
-      out.append(el('div', 'reveal', r.card.back));
+      out.append(el('div', 'reveal', card.back));
       const nextDue = new Date(r.card.due);
       out.append(el('div', 'muted small', `다음 복습: ${nextDue.toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}`));
       const next = el('button', 'primary', recallIdx + 1 < recallQueue.length ? '다음 카드' : '완료');
       next.style.marginTop = '12px';
-      next.addEventListener('click', () => {
-        recallIdx++;
-        renderCurrentCard();
-        renderAllCards();
-        refreshDuePill();
-      });
+      next.addEventListener('click', () => { recallIdx++; renderCurrentCard(); renderAllCards(); refreshDuePill(); });
       out.append(next);
-      wrap.append(out);
+      answerArea.append(out);
       next.focus();
     } catch (e) {
       toast(errMsg(e), true);
@@ -444,6 +479,14 @@ function renderCurrentCard() {
 
   submit.addEventListener('click', () => doGrade(ta.value.trim()));
   skip.addEventListener('click', () => doGrade(''));
+
+  showBtn.addEventListener('click', () => {
+    back.append(el('div', '', card.back));
+    fc.classList.add('flipped');
+    showBtn.hidden = true;
+    answerArea.hidden = false;
+    ta.focus();
+  });
 }
 
 async function renderAllCards() {
@@ -515,6 +558,34 @@ async function renderDash() {
     F.append(d);
   }
 
+  // 망각 현황 (에빙하우스)
+  const fStatus = await window.api.forgetting.status();
+  const FS = $('#forgettingStatus');
+  if (FS) {
+    FS.innerHTML = '';
+    if (!fStatus.length) {
+      FS.append(el('div', 'empty', '학습 세션이 없어요'));
+    } else {
+      for (const s of fStatus.slice(0, 6)) {
+        const pct = s.retention === null ? null : Math.round(s.retention * 100);
+        const row = el('div', 'retention-row');
+        const label = el('div', '', s.topic);
+        row.append(label);
+        if (pct !== null) {
+          const barWrap = el('div', 'retention-bar-wrap');
+          const bar = el('div', 'retention-bar');
+          bar.style.width = `${pct}%`;
+          bar.style.background = pct >= 80 ? 'var(--ok)' : pct >= 60 ? 'var(--warn)' : 'var(--danger)';
+          barWrap.append(bar);
+          const note = el('span', 'muted small', `${pct}%${s.dueForRecall ? ' · 복습 필요' : ''}`);
+          if (s.dueForRecall) note.style.color = 'var(--warn)';
+          row.append(barWrap, note);
+        }
+        FS.append(row);
+      }
+    }
+  }
+
   const T = $('#conceptTable');
   T.innerHTML = '';
   if (!s.concepts.length) {
@@ -563,6 +634,7 @@ $('#settingsBtn').addEventListener('click', async () => {
   $('#settingsModal').hidden = false;
   renderDataInfo();
   renderObsInfo();
+  renderUsageInfo(s);
 });
 
 async function renderObsInfo() {
@@ -585,6 +657,21 @@ $('#obsPickBtn').addEventListener('click', async () => {
     renderObsInfo();
   } catch (e) {
     toast(errMsg(e), true);
+  }
+});
+
+$('#obsDagBtn').addEventListener('click', async () => {
+  const btn = $('#obsDagBtn');
+  btn.disabled = true;
+  btn.textContent = '생성 중…';
+  try {
+    const r = await window.api.obsidian.buildDag();
+    toast(r.edges ? `개념 관계 ${r.edges}개 연결 완료` : '관계를 찾지 못했어요');
+  } catch (e) {
+    toast(errMsg(e), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '개념 관계 그래프 생성';
   }
 });
 
@@ -639,6 +726,105 @@ $('#healthBtn').addEventListener('click', async () => {
     : `✗ ${r.error}\n터미널에서 'claude' 로그인이 되어 있는지 확인하세요.`;
 });
 
+async function renderUsageInfo(settings) {
+  // Claude 버전
+  const ver = await window.api.claude.version();
+  $('#claudeVersionOut').textContent = `Claude Code: ${ver}`;
+
+  // 누적 토큰 사용량
+  const u = settings?.totalUsage ?? { input: 0, output: 0 };
+  const hasUsage = u.input > 0 || u.output > 0;
+  $('#usageOut').textContent = hasUsage
+    ? `누적 토큰 — 입력 ${u.input.toLocaleString()} / 출력 ${u.output.toLocaleString()}`
+    : '토큰 사용량 추적 중 (대화 후 갱신)';
+}
+
+$('#usageResetBtn').addEventListener('click', async () => {
+  await window.api.usage.reset();
+  toast('사용량 초기화했어요');
+  const s = await window.api.settings.get();
+  renderUsageInfo(s);
+});
+
+$('#usageLinkBtn').addEventListener('click', () => {
+  window.open('https://claude.ai/settings/limits');
+});
+
+/* ─────────────── 온보딩 ─────────────── */
+
+function goObStep(n) {
+  $$('.ob-step').forEach((s, i) => { s.hidden = i !== n - 1; s.classList.toggle('active', i === n - 1); });
+  $$('.ob-dot').forEach((d, i) => d.classList.toggle('active', i === n - 1));
+}
+
+function showObSubstep(id) {
+  ['ob3-ask', 'ob3-download', 'ob3-pick'].forEach((s) => {
+    document.getElementById(s).hidden = s !== id;
+  });
+}
+
+function initOnboarding(settings) {
+  if (settings.onboardingDone) return;
+
+  $('#onboarding').hidden = false;
+
+  // 스텝 1
+  $('#ob1Next').onclick = () => goObStep(2);
+
+  // 스텝 2: Claude 연결 확인
+  $('#ob2Check').onclick = async () => {
+    $('#ob-health-result').textContent = '확인 중…';
+    const r = await window.api.health();
+    $('#ob-health-result').textContent = r.ok
+      ? `연결됨 (${r.model})`
+      : `연결 실패: ${r.error} — 터미널에서 claude 로그인 확인`;
+    $('#ob-health-result').style.color = r.ok ? 'var(--ok)' : 'var(--danger)';
+    if (r.ok) setTimeout(() => goObStep(3), 800);
+  };
+  $('#ob2Skip').onclick = () => goObStep(3);
+
+  // 스텝 3: Obsidian
+  $('#ob3HasObs').onclick = () => showObSubstep('ob3-pick');
+  $('#ob3NoObs').onclick = () => showObSubstep('ob3-download');
+  $('#ob3AfterInstall').onclick = () => showObSubstep('ob3-pick');
+  $('#obDownloadLink').onclick = () => window.open('https://obsidian.md');
+  $('#ob3Pick').onclick = async () => {
+    try {
+      const r = await window.api.obsidian.pick();
+      if (r) {
+        $('#ob3VaultStatus').textContent = `보관함 연결됨: ${r.path}`;
+        $('#ob3VaultStatus').style.color = 'var(--ok)';
+        $('#ob3Done').disabled = false;
+      }
+    } catch (e) {
+      $('#ob3VaultStatus').textContent = errMsg(e);
+      $('#ob3VaultStatus').style.color = 'var(--danger)';
+    }
+  };
+  $('#ob3Done').onclick = () => goObStep(4);
+  $('#ob3Skip').onclick = () => goObStep(4);
+
+  // 스텝 4: 완료
+  $('#ob4Done').onclick = async () => {
+    await window.api.onboarding.complete();
+    $('#onboarding').hidden = true;
+  };
+}
+
+function maybeShowFillBtn(sessions) {
+  $('#gateFill').hidden = sessions.length > 0;
+}
+
+$('#gateFill')?.addEventListener('click', () => {
+  $('#gateQuestion').value = 'Node.js 이벤트 루프에서 microtask와 macrotask는 왜 순서가 다른가?';
+  $('#gateTopic').value = 'Node 이벤트 루프';
+  $('#gateHypothesis').value =
+    'microtask는 현재 task가 끝나자마자 실행되고, macrotask는 다음 루프에서 실행된다고 생각해요. 왜 이렇게 분리됐는지는 모르겠어요.';
+  $('#hypCount').textContent = `${$('#gateHypothesis').value.trim().length}자`;
+  $('#hypCount').style.color = 'var(--ok)';
+  updateGate();
+});
+
 /* ─────────────── boot ─────────────── */
 
 /**
@@ -660,11 +846,15 @@ const isMissingHandler = (e) => /No handler registered/i.test(String(e?.message 
     }
   };
 
+  const settings = await step('설정', () => window.api.settings.get(), {});
+  initOnboarding(settings);
+
   LADDER = await step('힌트 사다리', () => window.api.ladder(), FALLBACK_LADDER);
   NARROW_REQUEST = await step('되돌림 문구', () => window.api.narrowRequest(), FALLBACK_NARROW);
   await step('세션 목록', loadSessions);
   await step('복습 카드', refreshDuePill);
   const list = await step('세션 목록', () => window.api.session.list(), []);
+  maybeShowFillBtn(list);
   if (list.length) await step('세션 열기', () => openSession(list[0].id));
 
   if (stale.length) {
