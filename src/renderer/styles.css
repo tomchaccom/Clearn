@@ -316,3 +316,19 @@ label.check input { width: auto; margin: 0; accent-color: var(--accent); }
 .retention-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: 13px; }
 .retention-bar-wrap { height: 5px; background: var(--bg-3); border-radius: 3px; overflow: hidden; }
 .retention-bar { height: 100%; border-radius: 3px; transition: width 0.4s; }
+
+/* ── 플래시카드 ── */
+.flashcard-wrap { perspective: 900px; width: 100%; max-width: 560px; margin: 16px auto 0; }
+.flashcard { position: relative; width: 100%; min-height: 160px; transform-style: preserve-3d; transition: transform 0.42s; }
+.flashcard.flipped { transform: rotateY(180deg); }
+.flashcard-face {
+  position: absolute; inset: 0; backface-visibility: hidden;
+  border-radius: 12px; padding: 24px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+}
+.flashcard-front { background: var(--bg-2); border: 1px solid var(--line); }
+.flashcard-back { background: var(--accent-soft); border: 1px solid var(--accent); transform: rotateY(180deg); }
+.fc-label { font-size: 0.68rem; letter-spacing: 0.08em; color: var(--fg-3); text-transform: uppercase; margin-bottom: 10px; }
+.fc-progress { height: 4px; background: var(--bg-3); border-radius: 2px; margin: 0 0 14px; }
+.fc-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+.fc-count { font-size: 0.8rem; color: var(--fg-3); text-align: right; margin-bottom: 6px; }
