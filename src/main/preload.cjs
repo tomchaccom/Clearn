@@ -4,6 +4,7 @@ const invoke = (ch) => (...args) => ipcRenderer.invoke(ch, ...args);
 
 contextBridge.exposeInMainWorld('api', {
   settings: { get: invoke('settings:get'), set: invoke('settings:set') },
+  onboarding: { complete: invoke('onboarding:complete') },
   ladder: invoke('meta:ladder'),
   narrowRequest: invoke('meta:narrowRequest'),
   health: invoke('health:check'),

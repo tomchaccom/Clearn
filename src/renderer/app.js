@@ -639,6 +639,81 @@ $('#healthBtn').addEventListener('click', async () => {
     : `✗ ${r.error}\n터미널에서 'claude' 로그인이 되어 있는지 확인하세요.`;
 });
 
+/* ─────────────── 온보딩 ─────────────── */
+
+function goObStep(n) {
+  $$('.ob-step').forEach((s, i) => { s.hidden = i !== n - 1; s.classList.toggle('active', i === n - 1); });
+  $$('.ob-dot').forEach((d, i) => d.classList.toggle('active', i === n - 1));
+}
+
+function showObSubstep(id) {
+  ['ob3-ask', 'ob3-download', 'ob3-pick'].forEach((s) => {
+    document.getElementById(s).hidden = s !== id;
+  });
+}
+
+function initOnboarding(settings) {
+  if (settings.onboardingDone) return;
+
+  $('#onboarding').hidden = false;
+
+  // 스텝 1
+  $('#ob1Next').onclick = () => goObStep(2);
+
+  // 스텝 2: Claude 연결 확인
+  $('#ob2Check').onclick = async () => {
+    $('#ob-health-result').textContent = '확인 중…';
+    const r = await window.api.health();
+    $('#ob-health-result').textContent = r.ok
+      ? `연결됨 (${r.model})`
+      : `연결 실패: ${r.error} — 터미널에서 claude 로그인 확인`;
+    $('#ob-health-result').style.color = r.ok ? 'var(--ok)' : 'var(--danger)';
+    if (r.ok) setTimeout(() => goObStep(3), 800);
+  };
+  $('#ob2Skip').onclick = () => goObStep(3);
+
+  // 스텝 3: Obsidian
+  $('#ob3HasObs').onclick = () => showObSubstep('ob3-pick');
+  $('#ob3NoObs').onclick = () => showObSubstep('ob3-download');
+  $('#ob3AfterInstall').onclick = () => showObSubstep('ob3-pick');
+  $('#obDownloadLink').onclick = () => window.open('https://obsidian.md');
+  $('#ob3Pick').onclick = async () => {
+    try {
+      const r = await window.api.obsidian.pick();
+      if (r) {
+        $('#ob3VaultStatus').textContent = `보관함 연결됨: ${r.path}`;
+        $('#ob3VaultStatus').style.color = 'var(--ok)';
+        $('#ob3Done').disabled = false;
+      }
+    } catch (e) {
+      $('#ob3VaultStatus').textContent = errMsg(e);
+      $('#ob3VaultStatus').style.color = 'var(--danger)';
+    }
+  };
+  $('#ob3Done').onclick = () => goObStep(4);
+  $('#ob3Skip').onclick = () => goObStep(4);
+
+  // 스텝 4: 완료
+  $('#ob4Done').onclick = async () => {
+    await window.api.onboarding.complete();
+    $('#onboarding').hidden = true;
+  };
+}
+
+function maybeShowFillBtn(sessions) {
+  $('#gateFill').hidden = sessions.length > 0;
+}
+
+$('#gateFill')?.addEventListener('click', () => {
+  $('#gateQuestion').value = 'Node.js 이벤트 루프에서 microtask와 macrotask는 왜 순서가 다른가?';
+  $('#gateTopic').value = 'Node 이벤트 루프';
+  $('#gateHypothesis').value =
+    'microtask는 현재 task가 끝나자마자 실행되고, macrotask는 다음 루프에서 실행된다고 생각해요. 왜 이렇게 분리됐는지는 모르겠어요.';
+  $('#hypCount').textContent = `${$('#gateHypothesis').value.trim().length}자`;
+  $('#hypCount').style.color = 'var(--ok)';
+  updateGate();
+});
+
 /* ─────────────── boot ─────────────── */
 
 /**
@@ -660,11 +735,15 @@ const isMissingHandler = (e) => /No handler registered/i.test(String(e?.message 
     }
   };
 
+  const settings = await step('설정', () => window.api.settings.get(), {});
+  initOnboarding(settings);
+
   LADDER = await step('힌트 사다리', () => window.api.ladder(), FALLBACK_LADDER);
   NARROW_REQUEST = await step('되돌림 문구', () => window.api.narrowRequest(), FALLBACK_NARROW);
   await step('세션 목록', loadSessions);
   await step('복습 카드', refreshDuePill);
   const list = await step('세션 목록', () => window.api.session.list(), []);
+  maybeShowFillBtn(list);
   if (list.length) await step('세션 열기', () => openSession(list[0].id));
 
   if (stale.length) {

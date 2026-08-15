@@ -95,6 +95,7 @@ const handle = (ch, fn) => ipcMain.handle(ch, async (_e, ...a) => fn(...a));
 const send = (ch, payload) => win?.webContents.send(ch, payload);
 
 handle('settings:get', () => store.getSettings());
+handle('onboarding:complete', () => store.setSettings({ onboardingDone: true }));
 handle('settings:set', (patch) => {
   const s = store.setSettings(patch);
   agent.setModel(s.model);

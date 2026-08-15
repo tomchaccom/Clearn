@@ -37,6 +37,7 @@ const EMPTY = {
     obsidianFolder: 'Learn with Claude',
     obsidianAuto: false, // 자기설명 진단 직후 자동 내보내기
     obsidianCards: true, // 인출 카드도 함께 (spaced-repetition 포맷)
+    onboardingDone: false, // 첫 실행 온보딩 완료 여부
   },
   sessions: [], // { id, topic, question, hypothesis, sdkSessionId, hintLevel, maxHintLevel, messages[], createdAt, closedAt }
   cards: [], // { id, sessionId, front, back, concept, kind, ease, interval, due, reps, lapses, history[] }
