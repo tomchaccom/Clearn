@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell, Notification } from 'electr
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
+import fs from 'node:fs';
 
 import * as store from './store.js';
 import * as agent from './agent.js';
@@ -15,6 +16,7 @@ import {
   recallGraderPrompt,
   recallQuestionPrompt,
   coachPrompt,
+  conceptDagPrompt,
   countQuestions,
   NARROW_REQUEST,
   HINT_LADDER,
@@ -253,6 +255,46 @@ handle('obsidian:pick', async () => {
 handle('obsidian:export', (explainId) => doExport(explainId));
 
 handle('obsidian:reveal', (file) => shell.showItemInFolder(file));
+
+handle('obsidian:buildDag', async () => {
+  const s = store.getSettings();
+  if (!s.obsidianVault) throw new Error('설정에서 Obsidian 보관함을 먼저 선택해 주세요.');
+
+  const concepts = [...new Set(store.listExplains().flatMap((e) => e.concepts ?? []).filter(Boolean))];
+  if (concepts.length < 2) throw new Error('개념이 2개 이상 있어야 그래프를 만들 수 있어요.');
+
+  const result = await agent.runJson({ prompt: conceptDagPrompt({ concepts }) });
+  const edges = Array.isArray(result?.edges) ? result.edges : [];
+  if (!edges.length) return { edges: 0 };
+
+  const root = path.join(s.obsidianVault, obsidian.safeName(s.obsidianFolder || 'Learn with Claude'));
+  const CDIR = '개념';
+
+  for (const edge of edges) {
+    const toFile = path.join(root, CDIR, `${obsidian.safeName(edge.to)}.md`);
+    if (fs.existsSync(toFile)) appendDagLink(toFile, edge.from, CDIR);
+    if (edge.bidirectional) {
+      const fromFile = path.join(root, CDIR, `${obsidian.safeName(edge.from)}.md`);
+      if (fs.existsSync(fromFile)) appendDagLink(fromFile, edge.to, CDIR);
+    }
+  }
+  store.logEvent('obsidian_dag', { concepts: concepts.length, edges: edges.length });
+  return { edges: edges.length };
+});
+
+/** 개념 파일에 선수 개념 링크 추가 (managed 영역 밖에 append — 재내보내기해도 보존됨) */
+function appendDagLink(file, fromConcept, conceptsDir) {
+  const existing = fs.readFileSync(file, 'utf8');
+  const link = `- [[${conceptsDir}/${obsidian.safeName(fromConcept)}|${fromConcept}]]`;
+  if (existing.includes(link)) return;
+  const marker = '## 선수 개념';
+  if (existing.includes(marker)) {
+    const idx = existing.indexOf(marker) + marker.length;
+    fs.writeFileSync(file, existing.slice(0, idx) + '\n\n' + link + existing.slice(idx));
+  } else {
+    fs.appendFileSync(file, `\n\n${marker}\n\n${link}\n`);
+  }
+}
 
 /* ── 설명 (레버 4) ── */
 

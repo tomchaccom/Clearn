@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('api', {
     pick: invoke('obsidian:pick'),
     export: invoke('obsidian:export'),
     reveal: invoke('obsidian:reveal'),
+    buildDag: invoke('obsidian:buildDag'),
   },
 
   explain: { grade: invoke('explain:grade'), list: invoke('explain:list') },
