@@ -395,76 +395,75 @@ function renderCurrentCard() {
   prog.append(fill);
   area.append(count, prog);
 
-  // 플래시카드
-  const fcWrap = el('div', 'flashcard-wrap');
+  // 플래시카드 (.card class for backward-compat test selector)
+  const fcWrap = el('div', 'flashcard-wrap card');
   const fc = el('div', 'flashcard');
   const front = el('div', 'flashcard-face flashcard-front');
   front.append(el('div', 'fc-label', `${card.concept} · ${card.kind}`));
   front.append(el('div', '', card.front));
   const back = el('div', 'flashcard-face flashcard-back');
   back.append(el('div', 'fc-label', '정답'));
-  back.append(el('div', '', card.back));
+  // card.back populated lazily on flip to keep textContent clean before reveal
   fc.append(front, back);
   fcWrap.append(fc);
-  area.append(fcWrap);
 
   // 정답 보기 버튼
   const showBtn = el('button', 'primary', '정답 보기');
   showBtn.style.marginTop = '16px';
-  area.append(showBtn);
+  fcWrap.append(showBtn);
 
-  // 답 작성 + 채점 영역 (처음엔 숨김)
+  // 답 작성 + 채점 영역 (처음엔 숨김, DOM에 미리 존재)
   const answerArea = el('div');
   answerArea.hidden = true;
-  area.append(answerArea);
+  const ta = el('textarea');
+  ta.rows = 3;
+  ta.placeholder = '기억에서 꺼낸 내용을 적어도 되고, 비워둔 채 채점받아도 돼요.';
+  ta.style.marginTop = '14px';
+  const row = el('div', 'row between');
+  row.style.marginTop = '10px';
+  const skip = el('button', 'ghost small', '모르겠어요 (0점)');
+  const submit = el('button', 'primary', '채점');
+  row.append(skip, submit);
+  answerArea.append(ta, row);
+  fcWrap.append(answerArea);
+  area.append(fcWrap);
+
+  const doGrade = async (answer) => {
+    submit.disabled = skip.disabled = ta.disabled = true;
+    submit.textContent = '채점 중…';
+    try {
+      const r = await window.api.cards.answer({ cardId: card.id, answer });
+      const out = el('div', 'grade-out');
+      const head = el('div', 'row');
+      const badge = el('span', `gbadge ${r.grade >= 3 ? 'pass' : 'fail'}`, `${r.grade} / 5`);
+      head.append(badge, el('span', '', r.feedback));
+      out.append(head);
+      if (r.missing?.length) out.append(el('div', 'muted small', `빠진 것: ${r.missing.join(', ')}`));
+      out.append(el('div', 'reveal', card.back));
+      const nextDue = new Date(r.card.due);
+      out.append(el('div', 'muted small', `다음 복습: ${nextDue.toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}`));
+      const next = el('button', 'primary', recallIdx + 1 < recallQueue.length ? '다음 카드' : '완료');
+      next.style.marginTop = '12px';
+      next.addEventListener('click', () => { recallIdx++; renderCurrentCard(); renderAllCards(); refreshDuePill(); });
+      out.append(next);
+      answerArea.append(out);
+      next.focus();
+    } catch (e) {
+      toast(errMsg(e), true);
+      submit.disabled = skip.disabled = ta.disabled = false;
+      submit.textContent = '채점';
+    }
+  };
+
+  submit.addEventListener('click', () => doGrade(ta.value.trim()));
+  skip.addEventListener('click', () => doGrade(''));
 
   showBtn.addEventListener('click', () => {
+    back.append(el('div', '', card.back));
     fc.classList.add('flipped');
     showBtn.hidden = true;
     answerArea.hidden = false;
-
-    const ta = el('textarea');
-    ta.rows = 3;
-    ta.placeholder = '기억에서 꺼낸 내용을 적어도 되고, 비워둔 채 채점받아도 돼요.';
-    ta.style.marginTop = '14px';
-    answerArea.append(ta);
-
-    const row = el('div', 'row between');
-    row.style.marginTop = '10px';
-    const skip = el('button', 'ghost small', '모르겠어요 (0점)');
-    const submit = el('button', 'primary', '채점');
-    row.append(skip, submit);
-    answerArea.append(row);
     ta.focus();
-
-    const doGrade = async (answer) => {
-      submit.disabled = skip.disabled = ta.disabled = true;
-      submit.textContent = '채점 중…';
-      try {
-        const r = await window.api.cards.answer({ cardId: card.id, answer });
-        const out = el('div', 'grade-out');
-        const head = el('div', 'row');
-        const badge = el('span', `gbadge ${r.grade >= 3 ? 'pass' : 'fail'}`, `${r.grade} / 5`);
-        head.append(badge, el('span', '', r.feedback));
-        out.append(head);
-        if (r.missing?.length) out.append(el('div', 'muted small', `빠진 것: ${r.missing.join(', ')}`));
-        const nextDue = new Date(r.card.due);
-        out.append(el('div', 'muted small', `다음 복습: ${nextDue.toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}`));
-        const next = el('button', 'primary', recallIdx + 1 < recallQueue.length ? '다음 카드' : '완료');
-        next.style.marginTop = '12px';
-        next.addEventListener('click', () => { recallIdx++; renderCurrentCard(); renderAllCards(); refreshDuePill(); });
-        out.append(next);
-        answerArea.append(out);
-        next.focus();
-      } catch (e) {
-        toast(errMsg(e), true);
-        submit.disabled = skip.disabled = ta.disabled = false;
-        submit.textContent = '채점';
-      }
-    };
-
-    submit.addEventListener('click', () => doGrade(ta.value.trim()));
-    skip.addEventListener('click', () => doGrade(''));
   });
 }
 
