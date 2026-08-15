@@ -1,6 +1,6 @@
 {
-  "name": "learn-with-claude",
-  "productName": "Learn with Claude",
+  "name": "clearn",
+  "productName": "Clearn",
   "version": "0.1.0",
   "description": "학습 기회를 지키는 Claude 학습 도구 — 소크라테스 튜터 / 인출 연습 / 자기설명 검증",
   "type": "module",
@@ -22,7 +22,7 @@
   },
   "build": {
     "appId": "kim.koasu.learnwithclaude",
-    "productName": "Learn with Claude",
+    "productName": "Clearn",
     "directories": { "output": "dist" },
     "files": ["src/**/*", "package.json"],
     "asarUnpack": ["node_modules/@anthropic-ai/claude-agent-sdk*/**"],
