@@ -8,15 +8,17 @@
   "author": "명성",
   "license": "MIT",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
+    "start": "node src/server/server.js",
+    "dev": "node --watch src/server/server.js",
+    "electron": "electron .",
     "dist": "electron-builder --mac",
     "test": "node --import ./test/setup.mjs test/unit.mjs && node --import ./test/setup.mjs test/integration.mjs",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.3.220"
+    "@anthropic-ai/claude-agent-sdk": "^0.3.220",
+    "express": "^4.21.0"
   },
   "devDependencies": {
     "electron": "^33.2.0",
