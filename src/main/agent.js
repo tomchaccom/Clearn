@@ -63,6 +63,7 @@ export async function run({ prompt, systemPrompt, resume, requestId, onDelta }) 
   let text = '';
   let sessionId = resume ?? null;
   let sawDelta = false;
+  const usage = { input: 0, output: 0 };
 
   try {
     for await (const msg of query({ prompt, options })) {
@@ -83,6 +84,8 @@ export async function run({ prompt, systemPrompt, resume, requestId, onDelta }) 
 
       if (msg.type === 'assistant') {
         sessionId = msg.session_id ?? sessionId;
+        const u = msg.message?.usage;
+        if (u) { usage.input += u.input_tokens ?? 0; usage.output += u.output_tokens ?? 0; }
         // 델타를 못 받은 경우(스트리밍 미사용/실패)에만 전체 텍스트를 채운다.
         if (!sawDelta) {
           const full = (msg.message?.content ?? [])
@@ -108,7 +111,7 @@ export async function run({ prompt, systemPrompt, resume, requestId, onDelta }) 
     if (requestId) inflight.delete(requestId);
   }
 
-  return { text: text.trim(), sessionId };
+  return { text: text.trim(), sessionId, usage };
 }
 
 /** 툴 없이 한 방에 JSON을 받아오는 헬퍼. 실패 시 1회 재시도. */

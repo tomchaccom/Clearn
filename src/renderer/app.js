@@ -563,6 +563,7 @@ $('#settingsBtn').addEventListener('click', async () => {
   $('#settingsModal').hidden = false;
   renderDataInfo();
   renderObsInfo();
+  renderUsageInfo(s);
 });
 
 async function renderObsInfo() {
@@ -637,6 +638,30 @@ $('#healthBtn').addEventListener('click', async () => {
   $('#healthOut').textContent = r.ok
     ? `✓ 연결됨 (${r.model})`
     : `✗ ${r.error}\n터미널에서 'claude' 로그인이 되어 있는지 확인하세요.`;
+});
+
+async function renderUsageInfo(settings) {
+  // Claude 버전
+  const ver = await window.api.claude.version();
+  $('#claudeVersionOut').textContent = `Claude Code: ${ver}`;
+
+  // 누적 토큰 사용량
+  const u = settings?.totalUsage ?? { input: 0, output: 0 };
+  const hasUsage = u.input > 0 || u.output > 0;
+  $('#usageOut').textContent = hasUsage
+    ? `누적 토큰 — 입력 ${u.input.toLocaleString()} / 출력 ${u.output.toLocaleString()}`
+    : '토큰 사용량 추적 중 (대화 후 갱신)';
+}
+
+$('#usageResetBtn').addEventListener('click', async () => {
+  await window.api.usage.reset();
+  toast('사용량 초기화했어요');
+  const s = await window.api.settings.get();
+  renderUsageInfo(s);
+});
+
+$('#usageLinkBtn').addEventListener('click', () => {
+  window.open('https://claude.ai/settings/limits');
 });
 
 /* ─────────────── 온보딩 ─────────────── */
