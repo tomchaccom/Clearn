@@ -252,3 +252,26 @@ export function exportExplain({ vaultPath, rootFolder, session, explain, cards =
     cardCount: exportCards ? cards.length : 0,
   };
 }
+
+/**
+ * 개발자 친화 개념 노트를 Obsidian 파일에 작성/업데이트.
+ * 기존 ## 선수 개념 섹션(DAG 링크)은 보존.
+ */
+export function writeConceptNote(vaultPath, folderName, concept, noteContent) {
+  const conceptsDir = path.join(vaultPath, safeName(folderName || 'Learn with Claude'), '개념');
+  if (!fs.existsSync(conceptsDir)) fs.mkdirSync(conceptsDir, { recursive: true });
+
+  const filePath = path.join(conceptsDir, `${safeName(concept)}.md`);
+  const MARKER_BEGIN = '<!-- CLEARN:BEGIN -->';
+  const MARKER_END = '<!-- CLEARN:END -->';
+
+  const existing = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+  const dagIdx = existing.indexOf('## 선수 개념');
+  const dagSection = dagIdx >= 0 ? '\n\n' + existing.slice(dagIdx) : '';
+
+  const frontmatter = `---\nconcept: "${concept}"\nupdated: "${new Date().toISOString().slice(0, 10)}"\ntags: [clearn, concept]\n---\n\n`;
+  const newContent = frontmatter + MARKER_BEGIN + '\n' + noteContent.trim() + '\n' + MARKER_END + dagSection;
+
+  fs.writeFileSync(filePath, newContent, 'utf8');
+  return filePath;
+}
