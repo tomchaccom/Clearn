@@ -38,6 +38,8 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   stats: { get: invoke('stats:get'), coach: invoke('stats:coach') },
+  claude: { version: invoke('claude:version') },
+  usage: { reset: invoke('usage:reset') },
 
   onDelta: (cb) => {
     const fn = (_e, payload) => cb(payload);

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, shell, Notification } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { exec } from 'node:child_process';
 
 import * as store from './store.js';
 import * as agent from './agent.js';
@@ -96,6 +97,15 @@ const send = (ch, payload) => win?.webContents.send(ch, payload);
 
 handle('settings:get', () => store.getSettings());
 handle('onboarding:complete', () => store.setSettings({ onboardingDone: true }));
+handle('claude:version', () => new Promise((resolve) => {
+  exec('claude --version', (err, stdout) => resolve(err ? '확인 불가' : stdout.trim()));
+}));
+handle('usage:accumulate', ({ input, output }) => {
+  const s = store.getSettings();
+  const cur = s.totalUsage ?? { input: 0, output: 0 };
+  return store.setSettings({ totalUsage: { input: cur.input + (input || 0), output: cur.output + (output || 0) } });
+});
+handle('usage:reset', () => store.setSettings({ totalUsage: { input: 0, output: 0 } }));
 handle('settings:set', (patch) => {
   const s = store.setSettings(patch);
   agent.setModel(s.model);
@@ -149,7 +159,7 @@ handle('session:send', async ({ sessionId, text, requestId }) => {
   const prompt = body + tutorTurnSuffix(s.hintLevel);
   const settings = store.getSettings();
 
-  const { text: reply, sessionId: sdkId } = await agent.run({
+  const { text: reply, sessionId: sdkId, usage } = await agent.run({
     prompt,
     systemPrompt: tutorSystemPrompt({ topic: s.topic, learnerLevel: settings.learnerLevel }),
     resume: s.sdkSessionId || undefined,
@@ -157,6 +167,10 @@ handle('session:send', async ({ sessionId, text, requestId }) => {
     onDelta: (d) => send('stream:delta', { requestId, delta: d }),
   });
 
+  if (usage.input || usage.output) {
+    const cur = store.getSettings().totalUsage ?? { input: 0, output: 0 };
+    store.setSettings({ totalUsage: { input: cur.input + usage.input, output: cur.output + usage.output } });
+  }
   store.updateSession(sessionId, { sdkSessionId: sdkId });
   store.addMessage(sessionId, { role: 'assistant', text: reply, hintLevel: s.hintLevel });
 
