@@ -638,6 +638,21 @@ $('#obsPickBtn').addEventListener('click', async () => {
   }
 });
 
+$('#obsDagBtn').addEventListener('click', async () => {
+  const btn = $('#obsDagBtn');
+  btn.disabled = true;
+  btn.textContent = '생성 중…';
+  try {
+    const r = await window.api.obsidian.buildDag();
+    toast(r.edges ? `개념 관계 ${r.edges}개 연결 완료` : '관계를 찾지 못했어요');
+  } catch (e) {
+    toast(errMsg(e), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '개념 관계 그래프 생성';
+  }
+});
+
 async function renderDataInfo() {
   const d = await window.api.data.info();
   const kb = (d.bytes / 1024).toFixed(1);
