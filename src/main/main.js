@@ -3,6 +3,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
+
+// Electron은 shell PATH를 상속받지 않아 claude CLI를 못 찾는 경우가 있음.
+// 알려진 설치 경로를 앞에 추가해 spawn ENOTDIR 방지.
+process.env.PATH = [
+  path.join(os.homedir(), '.claude', 'local', 'node_modules', '.bin'),
+  path.join(os.homedir(), '.local', 'bin'),
+  '/usr/local/bin',
+  '/opt/homebrew/bin',
+  '/opt/homebrew/sbin',
+  process.env.PATH ?? '',
+].join(':');
 
 import * as store from './store.js';
 import * as agent from './agent.js';
