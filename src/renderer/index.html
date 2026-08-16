@@ -10,10 +10,10 @@
     <header class="titlebar">
       <div class="brand">Learn&nbsp;with&nbsp;Claude</div>
       <nav class="tabs">
-        <button class="tab active" data-view="inquiry">탐구</button>
-        <button class="tab" data-view="explain">설명</button>
-        <button class="tab" data-view="recall">인출 <span class="pill" id="duePill" hidden>0</span></button>
-        <button class="tab" data-view="dash">대시보드</button>
+        <button class="tab active" data-view="inquiry">질문하기</button>
+        <button class="tab" data-view="explain">내 말로 쓰기</button>
+        <button class="tab" data-view="recall">복습 카드 <span class="pill" id="duePill" hidden>0</span></button>
+        <button class="tab" data-view="dash">학습 기록</button>
       </nav>
       <div class="spacer"></div>
       <button class="ghost" id="settingsBtn">설정</button>
@@ -27,10 +27,10 @@
         <h1 style="font-size:2rem;margin:0">Clearn</h1>
         <p class="ob-sub">읽어서 이해된 것과, 꺼낼 수 있는 것은 달라요.</p>
         <div class="ob-cards">
-          <div class="ob-card"><strong>레버 1 — 먼저 나부터</strong><br><span class="muted">답 받기 전에 내 가설을 먼저 적어요</span></div>
-          <div class="ob-card"><strong>레버 2 — 소크라테스 질문</strong><br><span class="muted">Claude가 답 대신 질문으로 이끌어요</span></div>
-          <div class="ob-card"><strong>레버 3 — 인출 연습</strong><br><span class="muted">덮고 다시 꺼내요 — 반복이 기억을 굳혀요</span></div>
-          <div class="ob-card"><strong>레버 4 — 내 말로 검증</strong><br><span class="muted">설명하면 구멍만 질문으로 돌아와요</span></div>
+          <div class="ob-card"><strong>내 추측 먼저</strong><br><span class="muted">답 받기 전에 내 생각을 먼저 적어요</span></div>
+          <div class="ob-card"><strong>질문으로 이끌기</strong><br><span class="muted">Claude가 답 대신 질문으로 생각을 열어요</span></div>
+          <div class="ob-card"><strong>복습 카드</strong><br><span class="muted">덮고 다시 꺼내요 — 반복이 기억을 굳혀요</span></div>
+          <div class="ob-card"><strong>내 말로 설명하기</strong><br><span class="muted">직접 써보면 구멍이 어디인지 드러나요</span></div>
         </div>
         <button class="primary" id="ob1Next">시작하기</button>
       </div>
@@ -95,8 +95,8 @@
       <!-- 스텝 4: 완료 -->
       <div class="ob-step" id="ob-4">
         <h2>준비 완료 ✓</h2>
-        <p class="muted">탐구 탭에서 궁금한 것 하나를 골라<br>내 추측을 먼저 적어보세요.</p>
-        <p class="muted small">막히면 힌트 사다리(L0~L3)를 활용하고,<br>대화가 쌓이면 인출 카드로 만들어 복습하세요.</p>
+        <p class="muted">질문하기 탭에서 궁금한 것 하나를 골라<br>내 추측을 먼저 적어보세요.</p>
+        <p class="muted small">막히면 힌트 사다리를 활용하고,<br>대화가 쌓이면 복습 카드를 만들어보세요.</p>
         <button class="primary" id="ob4Done">학습 시작</button>
       </div>
 
@@ -118,26 +118,37 @@
         </aside>
 
         <div class="pane">
-          <!-- 게이트: 가설 먼저 -->
+          <!-- 게이트: 가설 먼저 (2-step) -->
           <div class="gate" id="gate">
-            <div class="gate-card">
-              <div class="gate-step">레버 1 — 먼저 나부터</div>
+            <!-- 스텝 1: 질문 입력 -->
+            <div class="gate-card" id="gateS1">
+              <div class="gate-step">1 / 2</div>
+              <h2>오늘 무엇을 배우려 하나요?</h2>
+              <p class="muted">질문을 구체적으로 적을수록 대화가 날카로워져요.</p>
+              <button class="ghost small" id="gateFill" hidden style="margin-bottom:8px;align-self:flex-start">예시로 채우기</button>
+              <label>질문</label>
+              <input id="gateQuestion" placeholder="예: Node.js 이벤트 루프에서 microtask와 macrotask는 왜 순서가 다른가?" />
+              <label>주제 태그 <span class="muted">(학습 기록 집계용)</span></label>
+              <input id="gateTopic" placeholder="예: Node 이벤트 루프" />
+              <div class="gate-step-nav">
+                <button class="primary" id="gateNext" disabled>다음</button>
+              </div>
+            </div>
+
+            <!-- 스텝 2: 가설 입력 -->
+            <div class="gate-card" id="gateS2" hidden>
+              <div class="gate-step">2 / 2</div>
               <h2>답을 받기 전에, 내 추측을 먼저 적어요</h2>
               <p class="muted">
-                인출 시도가 있어야 뒤따르는 피드백이 기억에 붙어요. 틀려도 괜찮아요 — 틀린 가설일수록
-                교정 효과가 큽니다.
+                틀려도 괜찮아요. 직접 꺼내 보는 행위 자체가 기억을 강화해요.
               </p>
-              <button class="ghost small" id="gateFill" hidden style="margin-bottom:8px;align-self:flex-start">예시로 채우기</button>
-              <label>무엇을 배우려 하나요?</label>
-              <input id="gateQuestion" placeholder="예: Node.js의 이벤트 루프에서 microtask와 macrotask는 왜 순서가 다른가?" />
-
-              <label>주제 태그 <span class="muted">(대시보드 집계용)</span></label>
-              <input id="gateTopic" placeholder="예: Node 이벤트 루프" />
-
               <label>내 현재 가설 <span class="muted">(최소 20자)</span></label>
-              <textarea id="gateHypothesis" rows="6" placeholder="내 추측은... / 아마 ~때문인 것 같은데, ~부분은 모르겠어요"></textarea>
+              <textarea id="gateHypothesis" rows="6" placeholder="내 추측은… / 아마 ~때문인 것 같은데, ~부분은 모르겠어요"></textarea>
               <div class="row between">
                 <span class="counter" id="hypCount">0자</span>
+              </div>
+              <div class="gate-step-nav">
+                <button class="ghost" id="gateBack">이전</button>
                 <button class="primary" id="gateStart" disabled>학습 시작</button>
               </div>
               <div class="err" id="gateErr" hidden></div>
@@ -152,7 +163,7 @@
                 <div class="chat-q muted" id="chatQuestion"></div>
               </div>
               <div class="ladder" id="ladder"></div>
-              <span class="tip-icon" data-tip="막힐 때 눌러요. L3는 정답을 공개해요.">ⓘ</span>
+              <span class="tip-icon" data-tip="막힐 때 눌러요. 단계별로 힌트가 공개돼요.">ⓘ</span>
             </div>
 
             <div class="messages" id="messages"></div>
@@ -160,9 +171,11 @@
             <div class="composer">
               <textarea id="composerInput" rows="2" placeholder="내 생각을 적어요…  (Enter 전송 · Shift+Enter 줄바꿈)"></textarea>
               <div class="composer-actions">
-                <button class="ghost small" id="toExplainBtn" title="레버 4">내 말로 정리하기</button>
-                <button class="ghost small" id="makeCardsBtn" title="레버 3">인출 카드 만들기</button>
-                <span class="tip-icon" data-tip="대화가 쌓인 후 눌러보세요. 복습 카드가 자동 생성돼요.">ⓘ</span>
+                <div id="composerActions" hidden>
+                  <button class="ghost small" id="toExplainBtn">내 말로 정리하기</button>
+                  <button class="ghost small" id="makeCardsBtn">복습 카드 만들기</button>
+                  <span class="tip-icon" data-tip="대화가 쌓이면 나타나요. 복습 카드가 자동 생성돼요.">ⓘ</span>
+                </div>
                 <button class="primary" id="sendBtn">보내기</button>
               </div>
             </div>
@@ -174,7 +187,7 @@
       <section class="view" id="view-explain">
         <div class="single">
           <div class="head-block">
-            <div class="gate-step">레버 4 — 내 말로 검증</div>
+            <div class="gate-step">내 말로 쓰기</div>
             <h2>덮고, 내 언어로 다시 설명해요</h2>
             <p class="muted">
               읽어서 이해되는 것과 스스로 인출·생성할 수 있는 것은 달라요. 여기서는 고쳐 쓴 문장을 돌려주지
@@ -198,7 +211,7 @@
       <section class="view" id="view-recall">
         <div class="single">
           <div class="head-block">
-            <div class="gate-step">레버 3 — 인출·재생성</div>
+            <div class="gate-step">복습 카드</div>
             <h2>덮고 다시 꺼내요</h2>
             <p class="muted">수동적 재독은 화려한 옷 입은 복습일 뿐이에요. 인출만이 기억을 강화합니다.</p>
           </div>

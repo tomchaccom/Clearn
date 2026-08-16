@@ -46,7 +46,7 @@ export async function* query({ prompt, options }) {
       '맨 처음 호출은 어떻게 생겼을까요? 그리고 `root->right = insert(...)` 는 덮어쓰는 걸까요?\n' +
       '```cpp\nint m = a > b ? a : b;\n```\n마지막으로 data가 같으면 어떻게 되나요?';
   } else if (/코치/.test(sys)) {
-    text = '정답 공개 비율이 높아요.';
+    text = '정답 보기 비율이 높아요.';
   } else if (/한 단어로만/.test(sys)) {
     text = 'ok';
   } else {
