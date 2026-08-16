@@ -276,6 +276,22 @@ $('#makeCardsBtn').addEventListener('click', async () => {
   }
 });
 
+$('#obsSessionBtn').addEventListener('click', async () => {
+  if (!currentSession) return;
+  const btn = $('#obsSessionBtn');
+  btn.disabled = true;
+  btn.textContent = '저장 중…';
+  try {
+    const r = await window.api.obsidian.exportSession(currentSession.id);
+    toast(`Obsidian에 저장했어요 — ${r.note.split('/').pop()}`);
+    btn.textContent = '저장됨 ✓';
+  } catch (e) {
+    toast(errMsg(e), true);
+    btn.disabled = false;
+    btn.textContent = 'Obsidian 저장';
+  }
+});
+
 /* ─────────────── 설명 ─────────────── */
 
 $('#exText').addEventListener('input', (e) => {
@@ -678,20 +694,26 @@ $('#obsPickBtn').addEventListener('click', async () => {
   }
 });
 
-$('#obsDagBtn').addEventListener('click', async () => {
-  const btn = $('#obsDagBtn');
+async function runBuildDag(btn, resultEl) {
   btn.disabled = true;
-  btn.textContent = '생성 중…';
+  btn.textContent = '분석 중…';
+  if (resultEl) resultEl.textContent = '';
   try {
     const r = await window.api.obsidian.buildDag();
-    toast(r.edges ? `개념 관계 ${r.edges}개 연결 완료` : '관계를 찾지 못했어요');
+    const msg = r.edges ? `개념 관계 ${r.edges}개 연결 완료` : '연결할 관계를 찾지 못했어요';
+    toast(msg);
+    if (resultEl) resultEl.textContent = msg;
   } catch (e) {
     toast(errMsg(e), true);
+    if (resultEl) resultEl.textContent = errMsg(e);
   } finally {
     btn.disabled = false;
-    btn.textContent = '개념 관계 그래프 생성';
+    btn.textContent = btn === $('#obsDagBtn') ? '개념 관계 그래프 생성' : '그래프 생성';
   }
-});
+}
+
+$('#obsDagBtn').addEventListener('click', () => runBuildDag($('#obsDagBtn'), null));
+$('#dagBtn').addEventListener('click', () => runBuildDag($('#dagBtn'), $('#dagResult')));
 
 async function renderDataInfo() {
   const d = await window.api.data.info();

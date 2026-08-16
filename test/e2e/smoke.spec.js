@@ -15,7 +15,7 @@ window.api = {
   health: { check: async () => ({ ok:true, model:'claude-sonnet-4-6' }) },
   onboarding: { complete: async () => {} },
   forgetting: { status: async () => [] },
-  obsidian: { check: async () => ({ configured:false }), pick: async () => null, export: async () => null, buildDag: async () => ({ edges:0 }), buildConceptNote: async () => null, reveal: async () => null },
+  obsidian: { check: async () => ({ configured:false }), pick: async () => null, export: async () => null, exportSession: async () => ({ note:'/tmp/t.md', created:true }), buildDag: async () => ({ edges:0 }), buildConceptNote: async () => null, reveal: async () => null },
   data: { info: async () => ({ path:'/tmp', size:0 }), backup: async () => null, reveal: async () => null, notes: async () => [] },
 };
 `;
