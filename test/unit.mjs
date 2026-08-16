@@ -73,8 +73,8 @@ assert.ok(sys.includes('HINT_LEVEL'));
 assert.ok(/완성된 답이나 전체 코드를 먼저 주지 마세요/.test(sys));
 assert.equal(HINT_LADDER.length, 4);
 assert.ok(tutorTurnSuffix(0).includes('힌트를 절대 주지 마세요'));
-assert.ok(tutorTurnSuffix(3).includes('정답 공개'));
-assert.ok(tutorTurnSuffix(99).includes('정답 공개'), '범위 밖 값은 클램프되어야 함');
+assert.ok(tutorTurnSuffix(3).includes('정답 보기'));
+assert.ok(tutorTurnSuffix(99).includes('정답 보기'), '범위 밖 값은 클램프되어야 함');
 ok('프롬프트 가드레일 + 힌트 사다리 클램프');
 
 /* "한 턴에 질문 하나" 규칙 — 프롬프트 일관성 + 카운터 */

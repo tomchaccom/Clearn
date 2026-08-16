@@ -253,7 +253,7 @@ assert.ok($('#flags').children.length >= 1, '안티패턴 플래그 없음');
 assert.ok($('#conceptTable').querySelector('table'), '개념 테이블 없음');
 $('#coachBtn').click();
 await new Promise((r) => setTimeout(r, 200));
-assert.ok($('#coach').textContent.includes('정답 공개'), '코치 응답 미표시');
+assert.ok($('#coach').textContent.includes('정답 보기'), '코치 응답 미표시');
 ok('대시보드: KPI·스파크라인·안티패턴·개념표·코치');
 
 /* ── 11. 설정 + 연결 확인 ── */

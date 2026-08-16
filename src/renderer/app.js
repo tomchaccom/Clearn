@@ -14,10 +14,10 @@ const uuid = () =>
 
 /** 메인 프로세스가 응답하지 않을 때 쓰는 최소 기본값. */
 const FALLBACK_LADDER = [
-  { level: 0, name: '질문만', badge: 'L0', directive: '' },
-  { level: 1, name: '방향 힌트', badge: 'L1', directive: '' },
-  { level: 2, name: '구체 힌트', badge: 'L2', directive: '' },
-  { level: 3, name: '정답 공개', badge: 'L3', directive: '' },
+  { level: 0, name: '되묻기', badge: 'L0', directive: '' },
+  { level: 1, name: '방향만', badge: 'L1', directive: '' },
+  { level: 2, name: '예시 보기', badge: 'L2', directive: '' },
+  { level: 3, name: '정답 보기', badge: 'L3', directive: '' },
 ];
 const FALLBACK_NARROW = '질문이 여러 개라 한 단계씩 생각하기 어려워요. 하나만 골라서 다시 물어봐 주세요.';
 
@@ -54,20 +54,31 @@ $('#gateHypothesis').addEventListener('input', (e) => {
   const n = e.target.value.trim().length;
   $('#hypCount').textContent = `${n}자`;
   $('#hypCount').style.color = n >= 20 ? 'var(--ok)' : 'var(--fg-3)';
-  updateGate();
+  $('#gateStart').disabled = n < 20;
 });
-$('#gateQuestion').addEventListener('input', updateGate);
+$('#gateQuestion').addEventListener('input', () => {
+  $('#gateNext').disabled = $('#gateQuestion').value.trim().length < 5;
+});
 
 function updateGate() {
-  $('#gateStart').disabled =
-    $('#gateQuestion').value.trim().length < 5 || $('#gateHypothesis').value.trim().length < 20;
+  $('#gateNext').disabled = $('#gateQuestion').value.trim().length < 5;
+  $('#gateStart').disabled = $('#gateHypothesis').value.trim().length < 20;
 }
+
+function showGateStep(step) {
+  $('#gateS1').hidden = step !== 1;
+  $('#gateS2').hidden = step !== 2;
+}
+
+$('#gateNext').addEventListener('click', () => showGateStep(2));
+$('#gateBack').addEventListener('click', () => showGateStep(1));
 
 $('#newSessionBtn').addEventListener('click', () => {
   currentSession = null;
   $('#gate').hidden = false;
   $('#chatWrap').hidden = true;
   $('#gateErr').hidden = true;
+  showGateStep(1);
   $$('.session-list li').forEach((li) => li.classList.remove('active'));
   $('#gateQuestion').focus();
 });
@@ -119,7 +130,13 @@ async function openSession(sid) {
   $('#chatQuestion').textContent = currentSession.question;
   renderLadder();
   renderMessages();
+  updateComposerActions();
   await loadSessions();
+}
+
+function updateComposerActions() {
+  const count = currentSession?.messages?.length ?? 0;
+  $('#composerActions').hidden = count < 3;
 }
 
 function renderLadder() {
@@ -130,7 +147,7 @@ function renderLadder() {
     b.classList.toggle('on', currentSession?.hintLevel === r.level);
     b.title = r.directive;
     b.addEventListener('click', async () => {
-      if (r.level === 3 && !confirm('정답을 공개하면 생산적 고투가 끝나요.\n대시보드에 기록됩니다. 계속할까요?')) return;
+      if (r.level === 3 && !confirm('정답을 보여드리면 생산적 고투가 끝나요.\n대시보드에 기록됩니다. 계속할까요?')) return;
       currentSession = await window.api.session.hint(currentSession.id, r.level);
       renderLadder();
       toast(`힌트 단계 → ${r.badge} ${r.name}`);
@@ -217,6 +234,7 @@ async function sendTurn(text) {
     off();
     streaming = false;
     $('#sendBtn').disabled = false;
+    updateComposerActions();
     box.scrollTop = box.scrollHeight;
   }
 }
