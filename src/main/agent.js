@@ -6,7 +6,23 @@
  * 인증은 로컬 Claude Code 로그인(구독)을 그대로 따라간다.
  */
 
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { query } from '@anthropic-ai/claude-agent-sdk';
+
+// 패키징 시 SDK 내장 바이너리가 asar 안에 갇혀 ENOTDIR이 발생하므로,
+// 사용자가 설치한 claude CLI를 직접 지정한다.
+function findClaudeCLI() {
+  const candidates = [
+    join(homedir(), '.local', 'bin', 'claude'),
+    join(homedir(), '.claude', 'local', 'node_modules', '.bin', 'claude'),
+    '/usr/local/bin/claude',
+    '/opt/homebrew/bin/claude',
+  ];
+  return candidates.find(existsSync) ?? undefined;
+}
+const CLAUDE_CLI = findClaudeCLI();
 
 const BASE_OPTIONS = {
   allowedTools: [],
@@ -14,6 +30,7 @@ const BASE_OPTIONS = {
   settingSources: [],
   permissionMode: 'dontAsk',
   maxTurns: 1,
+  ...(CLAUDE_CLI ? { pathToClaudeCodeExecutable: CLAUDE_CLI } : {}),
 };
 
 let currentModel = 'sonnet';
