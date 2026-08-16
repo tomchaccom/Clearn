@@ -1,16 +1,16 @@
 :root {
-  --bg: #14120f;
-  --bg-2: #1c1917;
-  --bg-3: #232020;
-  --line: #35302c;
-  --fg: #f0ebe4;
-  --fg-2: #a8a09a;
-  --fg-3: #6f6862;
-  --accent: #d97757;
-  --accent-soft: #3a2418;
-  --ok: #6ba368;
-  --warn: #d9a04e;
-  --danger: #cf6a5a;
+  --bg: #14120F;
+  --bg-2: #1B1917;
+  --bg-3: #232120;
+  --line: #33302C;
+  --fg: #E8E2D9;
+  --fg-2: #A49C93;
+  --fg-3: #6E675F;
+  --accent: #C98A6B;
+  --accent-soft: #2C211A;
+  --ok: #7FA88C;
+  --warn: #C4A468;
+  --danger: #BE7C6E;
   --radius: 12px;
   --font: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', system-ui, sans-serif;
 }
@@ -37,7 +37,7 @@ html, body {
 button { font-family: inherit; font-size: 13px; cursor: pointer; border-radius: 8px; transition: .12s; }
 button:disabled { opacity: .4; cursor: not-allowed; }
 
-.primary { background: var(--accent); color: #1a0f09; border: none; padding: 8px 16px; font-weight: 600; }
+.primary { background: var(--accent); color: #221309; border: none; padding: 8px 16px; font-weight: 600; }
 .primary:hover:not(:disabled) { filter: brightness(1.1); }
 .ghost { background: transparent; color: var(--fg-2); border: 1px solid var(--line); padding: 7px 14px; }
 .ghost:hover:not(:disabled) { color: var(--fg); border-color: var(--fg-3); }
@@ -89,7 +89,7 @@ label { display: block; margin: 14px 0 6px; font-size: 12px; color: var(--fg-2);
 .spacer { flex: 1; }
 .titlebar .ghost { -webkit-app-region: no-drag; }
 .pill {
-  display: inline-block; background: var(--accent); color: #1a0f09;
+  display: inline-block; background: var(--accent); color: #221309;
   border-radius: 999px; padding: 0 6px; font-size: 10px; font-weight: 700; margin-left: 4px;
 }
 
@@ -279,23 +279,89 @@ label.check input { width: auto; margin: 0; accent-color: var(--accent); }
   background: var(--bg);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  padding: 40px; gap: 0;
+  padding: 48px 40px;
 }
-.ob-step { display: none; flex-direction: column; align-items: center; text-align: center; max-width: 560px; gap: 12px; }
+
+.ob-step {
+  display: none; flex-direction: column; align-items: center;
+  text-align: center; max-width: 580px; width: 100%; gap: 14px;
+}
 .ob-step.active { display: flex; }
-.ob-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; width: 100%; }
+
+/* 스텝 1 */
+.ob-appicon { width: 72px; height: 72px; border-radius: 18px; margin-bottom: 4px; }
+.ob-title { font-size: 2.2rem; font-weight: 800; margin: 0; letter-spacing: -.5px; }
+.ob-sub { font-size: 1.1rem; color: var(--fg-2); margin: 0; line-height: 1.6; }
+.ob-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin: 6px 0; width: 100%;
+}
 .ob-card {
-  background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px;
-  padding: 14px; font-size: 0.82rem; text-align: left; line-height: 1.5;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 16px 14px; font-size: 0.92rem; text-align: left; line-height: 1.55;
 }
-.ob-dots { display: flex; gap: 8px; margin-top: 28px; }
-.ob-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); transition: background 0.2s; }
-.ob-dot.active { background: var(--accent); }
+.ob-card strong { font-size: 0.95rem; display: block; margin-bottom: 4px; }
+.ob-card .muted { font-size: 0.88rem; }
+
+/* 스텝 2 — 연결 확인 */
+.ob-conn-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 100%;
+}
+.ob-conn-indicator {
+  position: relative; width: 76px; height: 76px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 4px 0 8px;
+}
+.ob-conn-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 3px solid var(--line); transition: border-color 0.3s;
+}
+.ob-conn-indicator[data-state="checking"] .ob-conn-ring {
+  border-color: var(--line);
+  border-top-color: var(--accent);
+  animation: ob-spin 0.75s linear infinite;
+}
+.ob-conn-indicator[data-state="ok"] .ob-conn-ring { border-color: var(--ok); }
+.ob-conn-indicator[data-state="fail"] .ob-conn-ring { border-color: var(--danger); }
+.ob-conn-icon { font-size: 2rem; line-height: 1; z-index: 1; transition: opacity 0.2s; }
+@keyframes ob-spin { to { transform: rotate(360deg); } }
+
+.ob-health-box {
+  width: 100%; border-radius: 10px; padding: 14px 16px;
+  font-size: 0.95rem; line-height: 1.55; text-align: left;
+  border: 1px solid var(--line); background: var(--bg-2);
+}
+.ob-health-box[data-state="ok"] { border-color: var(--ok); background: #1A2C20; color: var(--ok); }
+.ob-health-box[data-state="fail"] { border-color: var(--danger); background: #2C1D1A; color: #DEB0A4; }
+.ob-health-box[data-state="checking"] { color: var(--fg-3); }
+
+.ob-2-btns { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; margin-top: 4px; }
+.ob-2-btns .primary { font-size: 1rem; padding: 12px 0; width: 100%; max-width: 280px; border-radius: 10px; }
+.ob-2-btns .ghost { font-size: 0.88rem; border: none; padding: 4px 0; color: var(--fg-3); }
+.ob-2-btns .ghost:hover { color: var(--fg-2); }
+
+/* 스텝 3 — Obsidian */
 .ob-vault-guide {
-  background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px;
-  padding: 14px; text-align: left; width: 100%; margin: 4px 0;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 16px; text-align: left; width: 100%;
 }
-.ob-sub { font-size: 1.05rem; color: var(--fg-2); margin: 4px 0; }
+.ob-vault-guide strong { font-size: 0.97rem; }
+.ob-vault-guide ol, .ob-vault-guide p { font-size: 0.9rem; }
+
+/* 스텝 4 — 완료 */
+.ob-done-icon { font-size: 2.4rem; margin-bottom: 4px; }
+
+/* 공통 */
+.ob-step h2 { font-size: 1.55rem; margin: 0; font-weight: 700; }
+.ob-step p.muted { font-size: 1rem; line-height: 1.65; margin: 0; }
+.ob-step .primary:not(.ob-2-btns .primary) { font-size: 1rem; padding: 11px 32px; border-radius: 10px; margin-top: 4px; }
+.ob-step .ghost:not(.ob-2-btns .ghost) { font-size: 0.92rem; }
+.ob-step code { background: var(--bg-3); padding: 2px 6px; border-radius: 5px; font-size: 0.88em; }
+
+.ob-dots { display: flex; gap: 8px; margin-top: 32px; }
+.ob-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); transition: background 0.25s; }
+.ob-dot.active { background: var(--accent); width: 20px; border-radius: 4px; }
 
 /* ── 툴팁 ⓘ ── */
 .tip-icon {
