@@ -32,6 +32,7 @@ test('게이트 — 가설 입력 시 시작 버튼 활성화', async ({ page })
   await page.goto(HTML);
   await page.fill('#gateQuestion', 'Node.js 이벤트 루프란?');
   await page.fill('#gateTopic', 'Node');
+  await page.click('#gateNext'); // 2-step: 1단계 → 2단계
   await page.fill('#gateHypothesis', '이벤트 루프는 비동기 처리를 담당하는 메커니즘이라고 생각해요.');
   await expect(page.locator('#gateStart')).toBeEnabled();
 });
