@@ -1,7 +1,7 @@
 {
   "name": "clearn",
   "productName": "Clearn",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "학습 기회를 지키는 Claude 학습 도구 — 소크라테스 튜터 / 인출 연습 / 자기설명 검증",
   "type": "module",
   "main": "src/main/main.js",
