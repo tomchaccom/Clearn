@@ -770,9 +770,48 @@ $('#usageLinkBtn').addEventListener('click', () => {
 
 /* ─────────────── 온보딩 ─────────────── */
 
+function obSetConnState(state, iconText) {
+  const ind = $('#ob-conn-indicator');
+  const icon = $('#ob-conn-icon');
+  if (ind) ind.dataset.state = state;
+  if (icon && iconText) icon.textContent = iconText;
+}
+
+function obShowHealthBox(state, html) {
+  const box = $('#ob-health-result');
+  if (!box) return;
+  box.dataset.state = state;
+  box.innerHTML = html;
+  box.hidden = false;
+}
+
+async function obRunHealthCheck() {
+  const btn = $('#ob2Check');
+  obSetConnState('checking', '↻');
+  if (btn) btn.disabled = true;
+  $('#ob-health-result').hidden = true;
+
+  const r = await window.api.health();
+
+  if (r.ok) {
+    obSetConnState('ok', '✓');
+    obShowHealthBox('ok', `연결됨 — ${r.model}`);
+    setTimeout(() => goObStep(3), 900);
+  } else {
+    obSetConnState('fail', '✗');
+    obShowHealthBox('fail',
+      `연결 실패<br><span style="font-size:0.88rem;opacity:0.85">${r.error}</span><br>` +
+      `<span style="font-size:0.85rem;opacity:0.7">터미널에서 <code style="background:#3a1f1b;padding:1px 5px;border-radius:4px">claude</code> 로그인을 확인하세요</span>`
+    );
+    if (btn) btn.disabled = false;
+    if (btn) btn.textContent = '다시 확인';
+  }
+}
+
 function goObStep(n) {
   $$('.ob-step').forEach((s, i) => { s.hidden = i !== n - 1; s.classList.toggle('active', i === n - 1); });
   $$('.ob-dot').forEach((d, i) => d.classList.toggle('active', i === n - 1));
+  if (n === 2) obRunHealthCheck();
 }
 
 function showObSubstep(id) {
@@ -790,15 +829,7 @@ function initOnboarding(settings) {
   $('#ob1Next').onclick = () => goObStep(2);
 
   // 스텝 2: Claude 연결 확인
-  $('#ob2Check').onclick = async () => {
-    $('#ob-health-result').textContent = '확인 중…';
-    const r = await window.api.health();
-    $('#ob-health-result').textContent = r.ok
-      ? `연결됨 (${r.model})`
-      : `연결 실패: ${r.error} — 터미널에서 claude 로그인 확인`;
-    $('#ob-health-result').style.color = r.ok ? 'var(--ok)' : 'var(--danger)';
-    if (r.ok) setTimeout(() => goObStep(3), 800);
-  };
+  $('#ob2Check').onclick = () => obRunHealthCheck();
   $('#ob2Skip').onclick = () => goObStep(3);
 
   // 스텝 3: Obsidian
