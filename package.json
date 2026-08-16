@@ -1,7 +1,7 @@
 {
   "name": "clearn",
   "productName": "Clearn",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "학습 기회를 지키는 Claude 학습 도구 — 소크라테스 튜터 / 인출 연습 / 자기설명 검증",
   "type": "module",
   "main": "src/main/main.js",
@@ -35,7 +35,8 @@
       "package.json"
     ],
     "asarUnpack": [
-      "node_modules/@anthropic-ai/claude-agent-sdk*/**"
+      "node_modules/@anthropic-ai/claude-agent-sdk*/**",
+      "**/node_modules/@anthropic-ai/claude-agent-sdk-darwin-arm64/**"
     ],
     "mac": {
       "target": [
