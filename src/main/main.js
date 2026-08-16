@@ -267,13 +267,26 @@ handle('obsidian:pick', async () => {
 
 handle('obsidian:export', (explainId) => doExport(explainId));
 
+handle('obsidian:exportSession', async (_, sessionId) => {
+  const s = store.getSettings();
+  if (!s.obsidianVault) throw new Error('설정에서 Obsidian 보관함을 먼저 선택해 주세요.');
+  const session = store.getSession(sessionId);
+  if (!session) throw new Error('세션을 찾을 수 없어요.');
+  const result = obsidian.exportSession({ vaultPath: s.obsidianVault, rootFolder: s.obsidianFolder, session });
+  store.logEvent('obsidian_session_export', { sessionId });
+  return result;
+});
+
 handle('obsidian:reveal', (file) => shell.showItemInFolder(file));
 
 handle('obsidian:buildDag', async () => {
   const s = store.getSettings();
   if (!s.obsidianVault) throw new Error('설정에서 Obsidian 보관함을 먼저 선택해 주세요.');
 
-  const concepts = [...new Set(store.listExplains().flatMap((e) => e.concepts ?? []).filter(Boolean))];
+  // Clearn 자기설명 개념 + 보관함 MD 파일 제목을 합산해 분석
+  const explainConcepts = store.listExplains().flatMap((e) => e.concepts ?? []).filter(Boolean);
+  const vaultTopics = obsidian.scanVaultTopics(s.obsidianVault, s.obsidianFolder);
+  const concepts = [...new Set([...explainConcepts, ...vaultTopics])];
   if (concepts.length < 2) throw new Error('개념이 2개 이상 있어야 그래프를 만들 수 있어요.');
 
   const result = await agent.runJson({ prompt: conceptDagPrompt({ concepts }) });

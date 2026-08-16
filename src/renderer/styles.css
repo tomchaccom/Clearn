@@ -380,6 +380,12 @@ label.check input { width: auto; margin: 0; accent-color: var(--accent); }
 }
 .tip-icon:hover::after { opacity: 1; }
 
+/* ── 대시보드 Obsidian 섹션 ── */
+.ob-dash-section {
+  margin-top: 28px; padding: 16px;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius);
+}
+
 /* ── 망각 곡선 retention 바 ── */
 .retention-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: 13px; }
 .retention-bar-wrap { height: 5px; background: var(--bg-3); border-radius: 3px; overflow: hidden; }

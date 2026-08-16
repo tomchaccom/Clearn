@@ -183,6 +183,7 @@
                 <div id="composerActions" hidden>
                   <button class="ghost small" id="toExplainBtn">내 말로 정리하기</button>
                   <button class="ghost small" id="makeCardsBtn">복습 카드 만들기</button>
+                  <button class="ghost small" id="obsSessionBtn">Obsidian 저장</button>
                   <span class="tip-icon" data-tip="대화가 쌓이면 나타나요. 복습 카드가 자동 생성돼요.">ⓘ</span>
                 </div>
                 <button class="primary" id="sendBtn">보내기</button>
@@ -253,6 +254,15 @@
           <div id="forgettingStatus"></div>
           <div class="sidebar-label">개념별 인출 성공률</div>
           <div id="conceptTable"></div>
+
+          <div class="ob-dash-section">
+            <div class="row between" style="margin-bottom:8px">
+              <div class="sidebar-label" style="margin:0">Obsidian 지식 그래프</div>
+              <button class="ghost small" id="dagBtn">그래프 생성</button>
+            </div>
+            <p class="muted small">보관함 MD 파일과 학습 기록을 분석해 개념 간 선수 관계를 연결해요.</p>
+            <div id="dagResult" class="muted small" style="margin-top:6px"></div>
+          </div>
         </div>
       </section>
     </main>

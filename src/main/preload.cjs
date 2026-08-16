@@ -24,9 +24,10 @@ contextBridge.exposeInMainWorld('api', {
     check: invoke('obsidian:check'),
     pick: invoke('obsidian:pick'),
     export: invoke('obsidian:export'),
+    exportSession: invoke('obsidian:exportSession'),
     reveal: invoke('obsidian:reveal'),
     buildDag: invoke('obsidian:buildDag'),
-    buildConceptNote: (args) => ipc('obsidian:buildConceptNote', args),
+    buildConceptNote: invoke('obsidian:buildConceptNote'),
   },
 
   explain: { grade: invoke('explain:grade'), list: invoke('explain:list') },

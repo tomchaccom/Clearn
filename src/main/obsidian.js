@@ -257,6 +257,68 @@ export function exportExplain({ vaultPath, rootFolder, session, explain, cards =
  * 개발자 친화 개념 노트를 Obsidian 파일에 작성/업데이트.
  * 기존 ## 선수 개념 섹션(DAG 링크)은 보존.
  */
+/**
+ * 대화 세션을 Obsidian 노트로 내보낸다.
+ * 자기설명(explainExport)과 달리 질문·가설·대화 전체를 저장한다.
+ */
+export function exportSession({ vaultPath, rootFolder, session }) {
+  const check = checkVault(vaultPath);
+  if (!check.ok) throw new Error(`Obsidian 보관함: ${check.reason}`);
+
+  const root = path.join(vaultPath, safeName(rootFolder || 'Learn with Claude'));
+  const date = ymd(session.createdAt);
+  const noteName = safeName(`${date} ${session.topic}`);
+  const noteFile = path.join(root, NOTES_DIR, `${noteName}.md`);
+
+  const fm = frontmatter({
+    created: date,
+    source: 'learn-with-claude',
+    topic: session.topic,
+    type: 'session',
+    'hint-level': `L${session.maxHintLevel ?? 0}`,
+    tags: ['learning'],
+  });
+
+  const parts = [`# ${session.topic}`];
+  if (session.question) parts.push(`## 질문\n\n${session.question}`);
+  if (session.hypothesis)
+    parts.push(`## 처음 가설\n\n> [!abstract] 학습 전\n> ${session.hypothesis.split('\n').join('\n> ')}`);
+
+  if (session.messages?.length) {
+    parts.push('## 대화');
+    for (const msg of session.messages) {
+      const who = msg.role === 'user' ? '**나**' : '**Claude**';
+      const hint = msg.hintLevel !== undefined ? ` *(L${msg.hintLevel})*` : '';
+      parts.push(`${who}${hint}\n\n${msg.text}`);
+    }
+  }
+
+  const note = writeNote(noteFile, fm, parts.join('\n\n'));
+  return { note: note.file, created: note.created };
+}
+
+/**
+ * 보관함 내 모든 .md 파일의 제목을 수집한다 (DAG 분석용).
+ * 노트 폴더 + 개념 폴더 + 루트 폴더를 스캔한다.
+ */
+export function scanVaultTopics(vaultPath, rootFolder) {
+  const root = path.join(vaultPath, safeName(rootFolder || 'Learn with Claude'));
+  const titles = new Set();
+  const dirs = [path.join(root, NOTES_DIR), path.join(root, CONCEPTS_DIR), root];
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) continue;
+    for (const f of fs.readdirSync(dir)) {
+      if (!f.endsWith('.md')) continue;
+      try {
+        const content = fs.readFileSync(path.join(dir, f), 'utf8');
+        const h1 = content.match(/^#\s+(.+)/m)?.[1]?.trim();
+        titles.add(h1 || f.slice(0, -3));
+      } catch { titles.add(f.slice(0, -3)); }
+    }
+  }
+  return [...titles];
+}
+
 export function writeConceptNote(vaultPath, folderName, concept, noteContent) {
   const conceptsDir = path.join(vaultPath, safeName(folderName || 'Learn with Claude'), '개념');
   if (!fs.existsSync(conceptsDir)) fs.mkdirSync(conceptsDir, { recursive: true });
