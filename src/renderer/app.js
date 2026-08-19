@@ -526,7 +526,7 @@ function renderCurrentCard() {
 async function renderAllCards() {
   const [cards, sessions] = await Promise.all([
     window.api.cards.all(),
-    window.api.session.list(),
+    window.api.session.list().catch(() => []),
   ]);
   const box = $('#allCards');
   box.innerHTML = '';

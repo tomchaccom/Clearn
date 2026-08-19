@@ -37,7 +37,6 @@ contextBridge.exposeInMainWorld('api', {
     due: invoke('cards:due'),
     all: invoke('cards:all'),
     answer: invoke('cards:answer'),
-    remove: invoke('cards:delete'),
     delete: invoke('cards:delete'),
   },
 
