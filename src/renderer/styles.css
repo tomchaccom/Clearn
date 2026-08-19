@@ -160,6 +160,42 @@ h3 { font-size: 16px; margin: 0 0 8px; }
   padding: 10px 14px; border-radius: 10px;
 }
 .msg .lvl { font-size: 10px; color: var(--fg-3); margin-top: 6px; }
+
+/* 채팅 내 코드 블록 */
+.msg .body pre {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 8px 0;
+  overflow-x: auto;
+  font-size: 12.5px;
+}
+.msg .body pre code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
+  color: #d4c9a8;
+  white-space: pre;
+  display: block;
+}
+.msg .body pre code[data-lang]::before {
+  display: block;
+  content: attr(data-lang);
+  font-size: 10px;
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 8px;
+  font-family: var(--font);
+}
+.msg .body code.inline-code {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  color: var(--accent);
+}
 .typing { color: var(--fg-3); font-style: italic; }
 .narrow {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;

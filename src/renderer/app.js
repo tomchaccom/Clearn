@@ -1,4 +1,41 @@
 const $ = (s) => document.querySelector(s);
+
+function renderMarkdown(text) {
+  const div = document.createElement('div');
+
+  // 코드 블록을 placeholder로 분리 후 나머지 텍스트만 이스케이프
+  const blocks = [];
+  const stripped = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const pre = document.createElement('pre');
+    const codeEl = document.createElement('code');
+    if (lang) codeEl.dataset.lang = lang;
+    codeEl.textContent = code.trimEnd();
+    pre.append(codeEl);
+    const ph = `\x00BLOCK${blocks.length}\x00`;
+    blocks.push(pre.outerHTML);
+    return ph;
+  });
+
+  // 코드 블록 외부 텍스트 이스케이프
+  const escaped = stripped
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // 인라인 백틱: `code`
+  const inlined = escaped.replace(/`([^`\n]+)`/g, (_, code) => {
+    const c = document.createElement('code');
+    c.className = 'inline-code';
+    c.textContent = code;
+    return c.outerHTML;
+  });
+
+  // placeholder 복원
+  const final = blocks.reduce((s, html, i) => s.replace(`\x00BLOCK${i}\x00`, html), inlined);
+
+  div.innerHTML = final;
+  return div;
+}
 const $$ = (s) => [...document.querySelectorAll(s)];
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -162,7 +199,13 @@ function renderMessages() {
   for (const m of currentSession.messages) {
     const d = el('div', `msg ${m.role}`);
     d.append(el('div', 'who', m.role === 'user' ? '나' : '튜터'));
-    d.append(el('div', 'body', m.text));
+    if (m.role === 'assistant') {
+      const body = el('div', 'body');
+      body.append(renderMarkdown(m.text));
+      d.append(body);
+    } else {
+      d.append(el('div', 'body', m.text));
+    }
     if (m.role === 'assistant' && m.hintLevel !== undefined)
       d.append(el('div', 'lvl', `힌트 ${LADDER[m.hintLevel]?.badge ?? 'L?'}`));
     box.append(d);
@@ -222,7 +265,8 @@ async function sendTurn(text) {
     const res = await window.api.session.send({ sessionId: currentSession.id, text, requestId });
     currentSession = res.session;
     body.classList.remove('typing');
-    body.textContent = res.text || acc;
+    body.innerHTML = '';
+    body.append(renderMarkdown(res.text || acc)); // ponytail: textContent during stream, renderMarkdown on complete
     a.append(el('div', 'lvl', `힌트 ${LADDER[currentSession.hintLevel]?.badge ?? 'L?'}`));
     if (res.tooMany) a.append(narrowNotice(res.questions));
     await loadSessions();
