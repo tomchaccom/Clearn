@@ -524,21 +524,48 @@ function renderCurrentCard() {
 }
 
 async function renderAllCards() {
-  const cards = await window.api.cards.all();
+  const [cards, sessions] = await Promise.all([
+    window.api.cards.all(),
+    window.api.session.list(),
+  ]);
   const box = $('#allCards');
   box.innerHTML = '';
   if (!cards.length) {
     box.append(el('div', 'empty', '카드 없음'));
     return;
   }
+
+  const sessionMap = Object.fromEntries(sessions.map(s => [s.id, s.topic]));
+
+  const groups = {};
   for (const c of [...cards].sort((a, b) => a.due - b.due)) {
-    const row = el('div', 'mini');
-    row.append(el('div', 'q', c.front));
-    const overdue = c.due < Date.now();
-    const d = el('div', 'd', overdue ? '지금 복습' : new Date(c.due).toLocaleDateString('ko-KR'));
-    if (overdue) d.style.color = 'var(--accent)';
-    row.append(d);
-    box.append(row);
+    const key = c.sessionId ?? '__none__';
+    (groups[key] ??= []).push(c);
+  }
+
+  for (const [sid, group] of Object.entries(groups)) {
+    const topic = sessionMap[sid] ?? '(세션 없음)';
+    box.append(el('div', 'sidebar-label', topic));
+    for (const c of group) {
+      const row = el('div', 'mini');
+      row.append(el('div', 'q', c.front));
+      const right = el('div', 'row');
+      right.style.gap = '8px';
+      const overdue = c.due < Date.now();
+      const d = el('div', 'd', overdue ? '지금 복습' : new Date(c.due).toLocaleDateString('ko-KR'));
+      if (overdue) d.style.color = 'var(--accent)';
+      const delBtn = el('button', 'ghost small', '×');
+      delBtn.title = '카드 삭제';
+      delBtn.style.cssText = 'padding:2px 6px;font-size:14px;color:var(--fg-3);border:none;';
+      delBtn.addEventListener('click', async () => {
+        await window.api.cards.delete(c.id);
+        row.remove();
+        await refreshDuePill();
+      });
+      right.append(d, delBtn);
+      row.append(right);
+      box.append(row);
+    }
   }
 }
 
