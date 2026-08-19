@@ -2,23 +2,38 @@ const $ = (s) => document.querySelector(s);
 
 function renderMarkdown(text) {
   const div = document.createElement('div');
-  // 펜스 코드 블록: ```lang\n...\n```
-  const fenced = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+
+  // 코드 블록을 placeholder로 분리 후 나머지 텍스트만 이스케이프
+  const blocks = [];
+  const stripped = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
     const pre = document.createElement('pre');
     const codeEl = document.createElement('code');
     if (lang) codeEl.dataset.lang = lang;
     codeEl.textContent = code.trimEnd();
     pre.append(codeEl);
-    return pre.outerHTML;
+    const ph = `\x00BLOCK${blocks.length}\x00`;
+    blocks.push(pre.outerHTML);
+    return ph;
   });
+
+  // 코드 블록 외부 텍스트 이스케이프
+  const escaped = stripped
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
   // 인라인 백틱: `code`
-  const inlined = fenced.replace(/`([^`\n]+)`/g, (_, code) => {
+  const inlined = escaped.replace(/`([^`\n]+)`/g, (_, code) => {
     const c = document.createElement('code');
     c.className = 'inline-code';
     c.textContent = code;
     return c.outerHTML;
   });
-  div.innerHTML = inlined;
+
+  // placeholder 복원
+  const final = blocks.reduce((s, html, i) => s.replace(`\x00BLOCK${i}\x00`, html), inlined);
+
+  div.innerHTML = final;
   return div;
 }
 const $$ = (s) => [...document.querySelectorAll(s)];
