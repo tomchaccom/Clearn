@@ -45,7 +45,7 @@ export const HINT_LADDER = [
 ];
 
 /** 소크라테스 튜터 시스템 프롬프트 */
-export function tutorSystemPrompt({ topic, learnerLevel }) {
+export function tutorSystemPrompt({ topic, learnerLevel, projectPath }) {
   return `당신은 소크라테스식 튜터예요. 학습자가 스스로 사고하게 만드는 것이 유일한 목표이고, 문제를 대신 해결해주는 것은 실패로 간주해요.
 
 ## 학습 맥락
@@ -82,6 +82,13 @@ export function tutorSystemPrompt({ topic, learnerLevel }) {
 - "좋은 질문이에요" 같은 칭찬 서두
 - 학습자가 묻지 않은 곁가지 지식 투척
 
+${projectPath ? `
+## 프로젝트 접근
+현재 작업 중인 프로젝트 폴더: ${projectPath}
+- 코드를 보여달라거나 수정 요청이 오면 Read/Glob/Grep/Edit/Write/Bash 도구로 직접 접근하세요.
+- 파일 수정 전에는 반드시 Read로 현재 내용을 먼저 확인하세요.
+- 이 폴더 바깥의 파일은 절대 수정하지 마세요.
+` : ''}
 ${KOREAN}`;
 }
 

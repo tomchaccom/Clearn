@@ -739,7 +739,29 @@ $('#settingsBtn').addEventListener('click', async () => {
   $('#settingsModal').hidden = false;
   renderDataInfo();
   renderObsInfo();
+  renderProjectInfo(s);
   renderUsageInfo(s);
+});
+
+function renderProjectInfo(s) {
+  const box = $('#projectInfo');
+  if (!box) return;
+  box.textContent = s.projectPath ? s.projectPath : '선택된 프로젝트 없음 — 선택하면 Claude가 코드를 직접 읽고 수정할 수 있어요.';
+}
+
+$('#projectPickBtn')?.addEventListener('click', async () => {
+  const p = await window.api.project.pick();
+  if (p) {
+    toast(`프로젝트 설정: ${p.split('/').pop()}`);
+    const s = await window.api.settings.get();
+    renderProjectInfo(s);
+  }
+});
+$('#projectClearBtn')?.addEventListener('click', async () => {
+  await window.api.settings.set({ projectPath: '' });
+  const s = await window.api.settings.get();
+  renderProjectInfo(s);
+  toast('프로젝트 해제됨');
 });
 
 async function renderObsInfo() {

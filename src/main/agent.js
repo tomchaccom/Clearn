@@ -25,11 +25,11 @@ function findClaudeCLI() {
 const CLAUDE_CLI = findClaudeCLI();
 
 const BASE_OPTIONS = {
-  allowedTools: [],
-  disallowedTools: ['Bash', 'Read', 'Write', 'Edit', 'WebSearch', 'WebFetch', 'Glob', 'Grep'],
+  allowedTools: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash'],
+  disallowedTools: ['WebSearch', 'WebFetch'],
   settingSources: [],
   permissionMode: 'dontAsk',
-  maxTurns: 1,
+  maxTurns: 15, // 파일 도구 사용 시 여러 턴 필요
   ...(CLAUDE_CLI ? { pathToClaudeCodeExecutable: CLAUDE_CLI } : {}),
 };
 
