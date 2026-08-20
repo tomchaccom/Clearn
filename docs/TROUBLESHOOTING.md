@@ -125,24 +125,3 @@ node --check src/main/파일명.js   # 오류 파일 직접 확인 후 수정
 ---
 
 *새 문제 발생 시 위 형식으로 하단에 추가하세요: `## N. 제목`, 증상/원인/해결책*
-
-## 9. PR 본문 이미지 깨짐 — raw.githubusercontent.com URL 소멸
-
-**증상**: PR 본문의 스크린샷이 깨진 이미지로 표시됨
-
-**원인**: feature 브랜치에 이미지를 커밋하고 `raw.githubusercontent.com/{owner}/{repo}/{feature-branch}/...` URL을 사용하면, 해당 브랜치가 merge 후 삭제될 때 URL도 함께 소멸함
-
-**해결책**: 이미지는 삭제되지 않는 `develop` 브랜치에 커밋하고 URL도 develop 기준으로 사용
-```bash
-B64=$(base64 < screenshot.png | tr -d '\n')
-gh api repos/{owner}/{repo}/contents/.github/screenshots/screenshot.png \
-  --method PUT \
-  --field message="chore: UI 스크린샷 추가" \
-  --field content="$B64" \
-  --field branch="develop"
-# PR 본문 URL: https://raw.githubusercontent.com/{owner}/{repo}/develop/.github/screenshots/screenshot.png
-```
-
----
-
-*새 문제 발생 시 위 형식으로 하단에 추가하세요: `## N. 제목`, 증상/원인/해결책*
