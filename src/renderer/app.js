@@ -507,14 +507,8 @@ function renderCurrentCard() {
   fc.append(front, back);
   fcWrap.append(fc);
 
-  // 정답 보기 버튼
-  const showBtn = el('button', 'primary', '정답 보기');
-  showBtn.style.marginTop = '16px';
-  fcWrap.append(showBtn);
-
-  // 답 작성 + 채점 영역 (처음엔 숨김, DOM에 미리 존재)
+  // 답 작성 + 채점 영역 (바로 표시)
   const answerArea = el('div');
-  answerArea.hidden = true;
   const ta = el('textarea');
   ta.rows = 3;
   ta.placeholder = '기억에서 꺼낸 내용을 적어도 되고, 비워둔 채 채점받아도 돼요.';
@@ -527,12 +521,15 @@ function renderCurrentCard() {
   answerArea.append(ta, row);
   fcWrap.append(answerArea);
   area.append(fcWrap);
+  ta.focus();
 
   const doGrade = async (answer) => {
     submit.disabled = skip.disabled = ta.disabled = true;
     submit.textContent = '채점 중…';
     try {
       const r = await window.api.cards.answer({ cardId: card.id, answer });
+      back.append(el('div', '', card.back));
+      fc.classList.add('flipped');
       const out = el('div', 'grade-out');
       const head = el('div', 'row');
       const badge = el('span', `gbadge ${r.grade >= 3 ? 'pass' : 'fail'}`, `${r.grade} / 5`);
@@ -557,14 +554,6 @@ function renderCurrentCard() {
 
   submit.addEventListener('click', () => doGrade(ta.value.trim()));
   skip.addEventListener('click', () => doGrade(''));
-
-  showBtn.addEventListener('click', () => {
-    back.append(el('div', '', card.back));
-    fc.classList.add('flipped');
-    showBtn.hidden = true;
-    answerArea.hidden = false;
-    ta.focus();
-  });
 }
 
 async function renderAllCards() {
@@ -739,7 +728,29 @@ $('#settingsBtn').addEventListener('click', async () => {
   $('#settingsModal').hidden = false;
   renderDataInfo();
   renderObsInfo();
+  renderProjectInfo(s);
   renderUsageInfo(s);
+});
+
+function renderProjectInfo(s) {
+  const box = $('#projectInfo');
+  if (!box) return;
+  box.textContent = s.projectPath ? s.projectPath : '선택된 프로젝트 없음 — 선택하면 Claude가 코드를 직접 읽고 수정할 수 있어요.';
+}
+
+$('#projectPickBtn')?.addEventListener('click', async () => {
+  const p = await window.api.project.pick();
+  if (p) {
+    toast(`프로젝트 설정: ${p.split('/').pop()}`);
+    const s = await window.api.settings.get();
+    renderProjectInfo(s);
+  }
+});
+$('#projectClearBtn')?.addEventListener('click', async () => {
+  await window.api.settings.set({ projectPath: '' });
+  const s = await window.api.settings.get();
+  renderProjectInfo(s);
+  toast('프로젝트 해제됨');
 });
 
 async function renderObsInfo() {

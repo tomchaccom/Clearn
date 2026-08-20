@@ -190,12 +190,14 @@ handle('session:send', async ({ sessionId, text, requestId }) => {
   const prompt = body + tutorTurnSuffix(s.hintLevel);
   const settings = store.getSettings();
 
+  const hasProject = Boolean(settings.projectPath);
   const { text: reply, sessionId: sdkId, usage } = await agent.run({
     prompt,
-    systemPrompt: tutorSystemPrompt({ topic: s.topic, learnerLevel: settings.learnerLevel }),
+    systemPrompt: tutorSystemPrompt({ topic: s.topic, learnerLevel: settings.learnerLevel, projectPath: settings.projectPath || '' }),
     resume: s.sdkSessionId || undefined,
     requestId,
     onDelta: (d) => send('stream:delta', { requestId, delta: d }),
+    ...(hasProject ? { allowedTools: agent.FILE_TOOLS, maxTurns: 15 } : {}),
   });
 
   if (usage.input || usage.output) {
@@ -263,6 +265,16 @@ handle('obsidian:pick', async () => {
   if (!check.ok) throw new Error(check.reason);
   store.setSettings({ obsidianVault: picked });
   return { path: picked, ...check };
+});
+
+handle('project:pick', async () => {
+  const { filePaths } = await dialog.showOpenDialog(win, {
+    properties: ['openDirectory'],
+    title: '프로젝트 폴더 선택',
+  });
+  if (!filePaths.length) return null;
+  store.setSettings({ projectPath: filePaths[0] });
+  return filePaths[0];
 });
 
 handle('obsidian:export', (explainId) => doExport(explainId));
