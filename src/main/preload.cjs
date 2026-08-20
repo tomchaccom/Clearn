@@ -20,6 +20,10 @@ contextBridge.exposeInMainWorld('api', {
 
   data: { info: invoke('data:info'), backup: invoke('data:backup'), reveal: invoke('data:reveal') },
 
+  project: {
+    pick: invoke('project:pick'),
+  },
+
   obsidian: {
     check: invoke('obsidian:check'),
     pick: invoke('obsidian:pick'),

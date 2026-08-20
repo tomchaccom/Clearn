@@ -1,8 +1,9 @@
 /**
  * Claude Agent SDK 래퍼.
  *
- * 이 앱은 툴을 전혀 쓰지 않는 순수 대화 모드로 SDK를 사용한다
- * (allowedTools: [], settingSources: [] → CLAUDE.md/프로젝트 설정도 안 읽음).
+ * 프로젝트 폴더가 설정된 경우 Read/Write/Edit/Glob/Grep/Bash 도구를 허용한다.
+ * Bash는 `npm test` 등 프로젝트 내 명령 실행을 위해 의도적으로 포함 —
+ * 시스템 프롬프트에서 프로젝트 폴더 외부 접근을 금지한다.
  * 인증은 로컬 Claude Code 로그인(구독)을 그대로 따라간다.
  */
 
@@ -25,11 +26,11 @@ function findClaudeCLI() {
 const CLAUDE_CLI = findClaudeCLI();
 
 const BASE_OPTIONS = {
-  allowedTools: [],
-  disallowedTools: ['Bash', 'Read', 'Write', 'Edit', 'WebSearch', 'WebFetch', 'Glob', 'Grep'],
+  allowedTools: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash'],
+  disallowedTools: ['WebSearch', 'WebFetch'],
   settingSources: [],
   permissionMode: 'dontAsk',
-  maxTurns: 1,
+  maxTurns: 15, // 파일 도구 사용 시 여러 턴 필요
   ...(CLAUDE_CLI ? { pathToClaudeCodeExecutable: CLAUDE_CLI } : {}),
 };
 
