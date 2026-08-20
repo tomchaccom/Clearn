@@ -190,10 +190,10 @@ handle('session:send', async ({ sessionId, text, requestId }) => {
   const prompt = body + tutorTurnSuffix(s.hintLevel);
   const settings = store.getSettings();
 
-  const hasProject = Boolean(settings.projectPath);
+  const hasProject = Boolean(s.projectPath);
   const { text: reply, sessionId: sdkId, usage } = await agent.run({
     prompt,
-    systemPrompt: tutorSystemPrompt({ topic: s.topic, learnerLevel: settings.learnerLevel, projectPath: settings.projectPath || '' }),
+    systemPrompt: tutorSystemPrompt({ topic: s.topic, learnerLevel: settings.learnerLevel, projectPath: s.projectPath || '' }),
     resume: s.sdkSessionId || undefined,
     requestId,
     onDelta: (d) => send('stream:delta', { requestId, delta: d }),
@@ -267,13 +267,15 @@ handle('obsidian:pick', async () => {
   return { path: picked, ...check };
 });
 
-handle('project:pick', async () => {
+handle('session:clearProject', (sessionId) => store.updateSession(sessionId, { projectPath: '' }));
+
+handle('project:pick', async (_, { sessionId } = {}) => {
   const { filePaths } = await dialog.showOpenDialog(win, {
     properties: ['openDirectory'],
     title: '프로젝트 폴더 선택',
   });
   if (!filePaths.length) return null;
-  store.setSettings({ projectPath: filePaths[0] });
+  if (sessionId) store.updateSession(sessionId, { projectPath: filePaths[0] });
   return filePaths[0];
 });
 
