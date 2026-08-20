@@ -190,12 +190,14 @@ handle('session:send', async ({ sessionId, text, requestId }) => {
   const prompt = body + tutorTurnSuffix(s.hintLevel);
   const settings = store.getSettings();
 
+  const hasProject = Boolean(settings.projectPath);
   const { text: reply, sessionId: sdkId, usage } = await agent.run({
     prompt,
     systemPrompt: tutorSystemPrompt({ topic: s.topic, learnerLevel: settings.learnerLevel, projectPath: settings.projectPath || '' }),
     resume: s.sdkSessionId || undefined,
     requestId,
     onDelta: (d) => send('stream:delta', { requestId, delta: d }),
+    ...(hasProject ? { allowedTools: agent.FILE_TOOLS, maxTurns: 15 } : {}),
   });
 
   if (usage.input || usage.output) {

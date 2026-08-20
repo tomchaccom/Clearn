@@ -26,13 +26,16 @@ function findClaudeCLI() {
 const CLAUDE_CLI = findClaudeCLI();
 
 const BASE_OPTIONS = {
-  allowedTools: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash'],
+  allowedTools: [],
   disallowedTools: ['WebSearch', 'WebFetch'],
   settingSources: [],
   permissionMode: 'dontAsk',
-  maxTurns: 15, // 파일 도구 사용 시 여러 턴 필요
+  maxTurns: 1,
   ...(CLAUDE_CLI ? { pathToClaudeCodeExecutable: CLAUDE_CLI } : {}),
 };
+
+/** 파일 접근 시 사용하는 툴 목록 */
+export const FILE_TOOLS = ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash'];
 
 let currentModel = 'sonnet';
 export function setModel(m) {
@@ -63,14 +66,18 @@ export function abort(requestId) {
  * @param {string} [p.resume]      이어갈 SDK 세션 id
  * @param {string} [p.requestId]
  * @param {(chunk:string)=>void} [p.onDelta]
+ * @param {string[]} [p.allowedTools]  툴 목록 오버라이드 (기본 [])
+ * @param {number} [p.maxTurns]        최대 턴 수 오버라이드 (기본 1)
  * @returns {Promise<{text:string, sessionId:string|null}>}
  */
-export async function run({ prompt, systemPrompt, resume, requestId, onDelta }) {
+export async function run({ prompt, systemPrompt, resume, requestId, onDelta, allowedTools, maxTurns }) {
   const abortController = new AbortController();
   if (requestId) inflight.set(requestId, abortController);
 
   const options = {
     ...BASE_OPTIONS,
+    ...(allowedTools !== undefined ? { allowedTools } : {}),
+    ...(maxTurns !== undefined ? { maxTurns } : {}),
     model: currentModel,
     systemPrompt: systemPrompt ?? '',
     includePartialMessages: Boolean(onDelta),
