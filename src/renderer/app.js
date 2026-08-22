@@ -168,8 +168,35 @@ async function openSession(sid) {
   renderLadder();
   renderMessages();
   updateComposerActions();
+  updateProjectBtn();
   await loadSessions();
 }
+
+function updateProjectBtn() {
+  const btn = $('#projectPickBtn');
+  if (!btn) return;
+  const p = currentSession?.projectPath;
+  btn.title = p ? `📁 ${p.split('/').pop()} (클릭해 변경 / 우클릭으로 해제)` : '프로젝트 폴더 연결';
+  btn.classList.toggle('active', Boolean(p));
+}
+
+$('#projectPickBtn')?.addEventListener('click', async () => {
+  if (!currentSession) return;
+  const p = await window.api.project.pick({ sessionId: currentSession.id });
+  if (p) {
+    currentSession = await window.api.session.get(currentSession.id);
+    updateProjectBtn();
+    toast(`프로젝트 연결: ${p.split('/').pop()}`);
+  }
+});
+$('#projectPickBtn')?.addEventListener('contextmenu', async (e) => {
+  e.preventDefault();
+  if (!currentSession?.projectPath) return;
+  await window.api.session.clearProject(currentSession.id);
+  currentSession = await window.api.session.get(currentSession.id);
+  updateProjectBtn();
+  toast('프로젝트 해제됨');
+});
 
 function updateComposerActions() {
   const count = currentSession?.messages?.length ?? 0;
@@ -568,6 +595,20 @@ async function renderAllCards() {
     return;
   }
 
+  // 전체 복습 리셋 버튼
+  const resetRow = el('div', 'row between');
+  resetRow.style.marginBottom = '4px';
+  const allDue = cards.filter(c => c.due < Date.now());
+  const resetBtn = el('button', 'ghost small', `전체 복습 (${allDue.length}장)`);
+  resetBtn.addEventListener('click', async () => {
+    recallQueue = await window.api.cards.due();
+    recallIdx = 0;
+    renderCurrentCard();
+    toast(`전체 ${recallQueue.length}장`);
+  });
+  resetRow.append(resetBtn);
+  box.append(resetRow);
+
   const sessionMap = Object.fromEntries(sessions.map(s => [s.id, s.topic]));
 
   const groups = {};
@@ -578,7 +619,19 @@ async function renderAllCards() {
 
   for (const [sid, group] of Object.entries(groups)) {
     const topic = sessionMap[sid] ?? '(세션 없음)';
-    box.append(el('div', 'sidebar-label', topic));
+    const header = el('div', 'row between');
+    header.style.cssText = 'margin: 20px 0 8px; align-items: center;';
+    const label = el('div', 'sidebar-label', topic);
+    label.style.margin = '0';
+    const filterBtn = el('button', 'ghost small', '이 세션만');
+    filterBtn.addEventListener('click', () => {
+      recallQueue = group.slice();
+      recallIdx = 0;
+      renderCurrentCard();
+      toast(`${topic} 세션 카드 ${group.length}장`);
+    });
+    header.append(label, filterBtn);
+    box.append(header);
     for (const c of group) {
       const row = el('div', 'mini');
       row.append(el('div', 'q', c.front));
@@ -728,29 +781,7 @@ $('#settingsBtn').addEventListener('click', async () => {
   $('#settingsModal').hidden = false;
   renderDataInfo();
   renderObsInfo();
-  renderProjectInfo(s);
   renderUsageInfo(s);
-});
-
-function renderProjectInfo(s) {
-  const box = $('#projectInfo');
-  if (!box) return;
-  box.textContent = s.projectPath ? s.projectPath : '선택된 프로젝트 없음 — 선택하면 Claude가 코드를 직접 읽고 수정할 수 있어요.';
-}
-
-$('#projectPickBtn')?.addEventListener('click', async () => {
-  const p = await window.api.project.pick();
-  if (p) {
-    toast(`프로젝트 설정: ${p.split('/').pop()}`);
-    const s = await window.api.settings.get();
-    renderProjectInfo(s);
-  }
-});
-$('#projectClearBtn')?.addEventListener('click', async () => {
-  await window.api.settings.set({ projectPath: '' });
-  const s = await window.api.settings.get();
-  renderProjectInfo(s);
-  toast('프로젝트 해제됨');
 });
 
 async function renderObsInfo() {

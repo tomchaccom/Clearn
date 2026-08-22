@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('api', {
     create: invoke('session:create'),
     hint: invoke('session:hint'),
     send: invoke('session:send'),
+    clearProject: invoke('session:clearProject'),
   },
 
   data: { info: invoke('data:info'), backup: invoke('data:backup'), reveal: invoke('data:reveal') },
