@@ -171,8 +171,11 @@
                 <div class="chat-topic" id="chatTopic"></div>
                 <div class="chat-q muted" id="chatQuestion"></div>
               </div>
-              <div class="ladder" id="ladder"></div>
-              <span class="tip-icon" data-tip="막힐 때 눌러요. 단계별로 힌트가 공개돼요.">ⓘ</span>
+              <div class="chat-head-right">
+                <button class="ghost small" id="projectPickBtn" title="프로젝트 폴더 연결">📁</button>
+                <div class="ladder" id="ladder"></div>
+                <span class="tip-icon" data-tip="막힐 때 눌러요. 단계별로 힌트가 공개돼요.">ⓘ</span>
+              </div>
             </div>
 
             <div class="messages" id="messages"></div>
@@ -292,15 +295,6 @@
           <div class="row" style="margin-top:8px;gap:8px;align-items:center">
             <button class="ghost small" id="usageResetBtn">누적 초기화</button>
             <button class="ghost small" id="usageLinkBtn">claude.ai에서 사용량 확인 →</button>
-          </div>
-        </div>
-
-        <div class="datazone">
-          <div class="sidebar-label" style="margin-top:0">프로젝트</div>
-          <div id="projectInfo" class="muted small"></div>
-          <div class="row" style="margin-top:10px">
-            <button class="ghost small" id="projectPickBtn">폴더 선택</button>
-            <button class="ghost small" id="projectClearBtn">해제</button>
           </div>
         </div>
 

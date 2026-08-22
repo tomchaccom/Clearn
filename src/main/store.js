@@ -37,7 +37,6 @@ const EMPTY = {
     obsidianFolder: 'Learn with Claude',
     obsidianAuto: false, // 자기설명 진단 직후 자동 내보내기
     obsidianCards: true, // 인출 카드도 함께 (spaced-repetition 포맷)
-    projectPath: '', // 로컬 프로젝트 폴더 경로
     onboardingDone: false, // 첫 실행 온보딩 완료 여부
     totalUsage: { input: 0, output: 0 }, // 누적 토큰 사용량
   },
