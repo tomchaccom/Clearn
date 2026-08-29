@@ -503,6 +503,28 @@ async function renderRecall() {
   renderCurrentCard();
   renderAllCards();
   await refreshDuePill();
+  renderForgettingRecall();
+}
+
+async function renderForgettingRecall() {
+  const box = $('#forgettingRecall');
+  if (!box) return;
+  const status = await window.api.forgetting.status();
+  const due = status.filter((s) => s.dueForRecall);
+  if (!due.length) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '';
+  box.append(el('div', 'sidebar-label', `망각 복습 필요 (${due.length})`));
+  for (const s of due) {
+    const pct = s.retention === null ? null : Math.round(s.retention * 100);
+    const row = el('div', 'mini');
+    const left = el('div', 'q', s.topic);
+    if (pct !== null) left.append(el('span', 'muted small', ` · 보존율 ${pct}%`));
+    const goBtn = el('button', 'ghost small', '세션 열기');
+    goBtn.addEventListener('click', () => { show('inquiry'); openSession(s.id); });
+    row.append(left, goBtn);
+    box.append(row);
+  }
 }
 
 function renderCurrentCard() {
@@ -662,6 +684,25 @@ async function refreshDuePill() {
   p.hidden = n === 0;
 }
 
+$('#addManualCardBtn')?.addEventListener('click', async () => {
+  const front = $('#manualFront').value.trim();
+  const back = $('#manualBack').value.trim();
+  const concept = $('#manualConcept').value.trim();
+  if (!front || !back) { toast('앞면과 뒷면을 모두 입력해 주세요.', true); return; }
+  try {
+    await window.api.cards.addManual({ front, back, concept, topic: concept || '직접 추가' });
+    toast('카드가 추가됐어요');
+    $('#manualFront').value = '';
+    $('#manualBack').value = '';
+    $('#manualConcept').value = '';
+    $('#addCardDetails').removeAttribute('open');
+    await renderAllCards();
+    await refreshDuePill();
+  } catch (e) {
+    toast(errMsg(e), true);
+  }
+});
+
 /* ─────────────── 대시보드 ─────────────── */
 
 async function renderDash() {
@@ -713,7 +754,7 @@ async function renderDash() {
     if (!fStatus.length) {
       FS.append(el('div', 'empty', '학습 세션이 없어요'));
     } else {
-      for (const s of fStatus.slice(0, 6)) {
+      for (const s of fStatus) {
         const pct = s.retention === null ? null : Math.round(s.retention * 100);
         const row = el('div', 'retention-row');
         const label = el('div', '', s.topic);

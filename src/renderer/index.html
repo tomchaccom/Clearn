@@ -228,6 +228,24 @@
             <h2>덮고 다시 꺼내요</h2>
             <p class="muted">수동적 재독은 화려한 옷 입은 복습일 뿐이에요. 인출만이 기억을 강화합니다.</p>
           </div>
+
+          <!-- 직접 카드 추가 -->
+          <details id="addCardDetails" class="manual-card-details">
+            <summary>+ 직접 카드 추가</summary>
+            <div class="manual-card-form">
+              <label>앞면 <span class="muted">(질문 또는 개념)</span></label>
+              <textarea id="manualFront" rows="2" placeholder="질문 또는 개념"></textarea>
+              <label>뒷면 <span class="muted">(정답 또는 설명)</span></label>
+              <textarea id="manualBack" rows="2" placeholder="정답 또는 설명"></textarea>
+              <label>개념 태그 <span class="muted">(선택 — 학습 통계에 사용돼요)</span></label>
+              <input id="manualConcept" placeholder="예: Node 이벤트 루프" />
+              <button class="primary" id="addManualCardBtn" style="margin-top:10px">카드 추가</button>
+            </div>
+          </details>
+
+          <!-- 망각 복습 필요 세션 -->
+          <div id="forgettingRecall" hidden></div>
+
           <div id="recallArea"></div>
           <div class="history">
             <div class="sidebar-label">전체 카드</div>
@@ -253,7 +271,7 @@
             <button class="ghost small" id="coachBtn">생성</button>
           </div>
           <div id="coach" class="coach"></div>
-          <div class="sidebar-label">망각 현황 (에빙하우스 곡선)</div>
+          <div class="sidebar-label">망각 현황 <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">— 망각률 높은 순</span></div>
           <div id="forgettingStatus"></div>
           <div class="sidebar-label">개념별 인출 성공률</div>
           <div id="conceptTable"></div>
