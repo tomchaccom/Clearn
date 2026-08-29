@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld('api', {
     all: invoke('cards:all'),
     answer: invoke('cards:answer'),
     delete: invoke('cards:delete'),
+    addManual: invoke('cards:addManual'),
   },
 
   stats: { get: invoke('stats:get'), coach: invoke('stats:coach') },

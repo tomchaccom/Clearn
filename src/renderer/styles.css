@@ -425,6 +425,16 @@ label.check input { width: auto; margin: 0; accent-color: var(--accent); }
   background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius);
 }
 
+/* ── 직접 카드 추가 ── */
+.manual-card-details { margin-bottom: 16px; }
+.manual-card-details summary {
+  cursor: pointer; list-style: none; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .6px; color: var(--fg-3);
+  padding: 6px 0; user-select: none;
+}
+.manual-card-details summary::-webkit-details-marker { display: none; }
+.manual-card-form { padding: 12px 0 4px; }
+
 /* ── 망각 곡선 retention 바 ── */
 .retention-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: 13px; }
 .retention-bar-wrap { height: 5px; background: var(--bg-3); border-radius: 3px; overflow: hidden; }

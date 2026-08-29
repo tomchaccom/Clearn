@@ -423,15 +423,24 @@ handle('cards:answer', async ({ cardId, answer }) => {
   return { grade, feedback: json.feedback || '', missing: json.missing || [], card: updated };
 });
 
+handle('cards:addManual', ({ front, back, concept, topic }) => {
+  if (!String(front || '').trim() || !String(back || '').trim())
+    throw new Error('앞면과 뒷면을 모두 입력해 주세요.');
+  const t = topic || concept || '직접 추가';
+  return store.addCards(null, t, [{ front, back, concept: concept || t }]);
+});
+
 /* ── 대시보드 ── */
 
 handle('forgetting:status', () =>
-  store.listSessions().map((s) => ({
-    id: s.id,
-    topic: s.topic,
-    retention: store.calcRetention(s.id),
-    dueForRecall: !!s.forgettingData && Math.exp(-(Date.now() - s.forgettingData.lastReview) / (86400000 * s.forgettingData.stability)) < 0.8,
-  })),
+  store.listSessions()
+    .map((s) => ({
+      id: s.id,
+      topic: s.topic,
+      retention: store.calcRetention(s.id),
+      dueForRecall: !!s.forgettingData && Math.exp(-(Date.now() - s.forgettingData.lastReview) / (86400000 * s.forgettingData.stability)) < 0.8,
+    }))
+    .sort((a, b) => (a.retention ?? 1) - (b.retention ?? 1)),
 );
 
 handle('stats:get', () => ({ stats: store.stats(), antipatterns: store.antipatterns() }));
